@@ -82,4 +82,29 @@ class ProgressCalculatorTest {
                 today
         ));
     }
+
+    @Test
+    void longestStreakAndInactivePeriods_computeAccuratelyAndNeutrally() {
+        LocalDate start = LocalDate.of(2026, 11, 1);
+        LocalDate end = LocalDate.of(2026, 11, 10);
+        List<LocalDate> activeDates = List.of(
+                LocalDate.of(2026, 11, 2),
+                LocalDate.of(2026, 11, 3),
+                LocalDate.of(2026, 11, 4),
+                LocalDate.of(2026, 11, 8),
+                LocalDate.of(2026, 11, 9)
+        );
+
+        assertEquals(3, ProgressCalculator.calculateLongestCodingStreak(activeDates));
+        assertEquals(0, ProgressCalculator.calculateLongestCodingStreak(List.of()));
+
+        List<ProgressCalculator.InactivePeriod> gaps = ProgressCalculator.findInactivePeriods(start, end, activeDates);
+        assertEquals(3, gaps.size());
+        assertEquals(new ProgressCalculator.InactivePeriod(
+                LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 1), 1), gaps.get(0));
+        assertEquals(new ProgressCalculator.InactivePeriod(
+                LocalDate.of(2026, 11, 5), LocalDate.of(2026, 11, 7), 3), gaps.get(1));
+        assertEquals(new ProgressCalculator.InactivePeriod(
+                LocalDate.of(2026, 11, 10), LocalDate.of(2026, 11, 10), 1), gaps.get(2));
+    }
 }

@@ -1,6 +1,7 @@
 package com.pathpilot.auth;
 
 import com.pathpilot.coding.CodingActivityRepository;
+import com.pathpilot.github.ConnectedAccountRepository;
 import com.pathpilot.github.GithubEventRepository;
 import com.pathpilot.job.JobApplicationRepository;
 import com.pathpilot.planner.DailyLogRepository;
@@ -101,6 +102,9 @@ class AuthIntegrationTest {
 
     @MockitoBean
     private GithubEventRepository githubEventRepository;
+
+    @MockitoBean
+    private ConnectedAccountRepository connectedAccountRepository;
 
     @MockitoBean
     private ProjectRepository projectRepository;

@@ -2,6 +2,7 @@ package com.pathpilot.progress;
 
 import com.pathpilot.coding.CodingActivity;
 import com.pathpilot.coding.CodingActivityRepository;
+import com.pathpilot.github.ConnectedAccountRepository;
 import com.pathpilot.github.GithubEvent;
 import com.pathpilot.github.GithubEventRepository;
 import com.pathpilot.job.JobApplication;
@@ -106,6 +107,9 @@ class DemoDashboardIntegrationTest {
     private GithubEventRepository githubEventRepository;
 
     @MockitoBean
+    private ConnectedAccountRepository connectedAccountRepository;
+
+    @MockitoBean
     private ProjectRepository projectRepository;
 
     @MockitoBean
@@ -176,7 +180,7 @@ class DemoDashboardIntegrationTest {
             codings.add(c);
             return c;
         });
-        when(codingActivityRepository.findAllByUserIdAndActivityDateBetweenOrderByActivityDateDesc(
+        when(codingActivityRepository.findAllByUserIdAndDeletedAtUtcIsNullAndActivityDateBetweenOrderByActivityDateDescIdDesc(
                 anyLong(), any(LocalDate.class), any(LocalDate.class)))
                 .thenAnswer(inv -> codings);
 

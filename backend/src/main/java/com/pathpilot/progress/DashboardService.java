@@ -147,7 +147,7 @@ public class DashboardService {
         // 3. Honest Coding Streak
         LocalDate codingStart = targetDate.minusDays(CODING_LOOKBACK_DAYS);
         List<CodingActivity> codingActivities = codingActivityRepository
-                .findAllByUserIdAndActivityDateBetweenOrderByActivityDateDesc(userId, codingStart, targetDate);
+                .findAllByUserIdAndDeletedAtUtcIsNullAndActivityDateBetweenOrderByActivityDateDescIdDesc(userId, codingStart, targetDate);
         Set<LocalDate> codingDates = codingActivities.stream()
                 .map(CodingActivity::getActivityDate)
                 .collect(Collectors.toSet());

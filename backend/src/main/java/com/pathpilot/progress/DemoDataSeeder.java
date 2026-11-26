@@ -94,8 +94,10 @@ public class DemoDataSeeder implements CommandLineRunner {
         profile.setTargetRole("Fresher");
         profile.setTimeZone(UserProfile.DEFAULT_TIME_ZONE);
         profile.setGithubUrl("https://github.com/demo-pathpilot");
+        profile.setGithubUsername("demo-pathpilot");
         profile.setLinkedinUrl("https://linkedin.com/in/demo-pathpilot");
         profile.setCodingProfileUrl("https://leetcode.com/demo-pathpilot");
+        profile.setLeetcodeUrl("https://leetcode.com/demo-pathpilot");
         userProfileRepository.save(profile);
 
         LocalDate today = LocalDate.now(ZoneId.of(UserProfile.DEFAULT_TIME_ZONE));
@@ -125,6 +127,9 @@ public class DemoDataSeeder implements CommandLineRunner {
             activity.setProblemsSolved(i == 0 ? 2 : 1);
             activity.setMinutesSpent(45);
             activity.setProblemTitle("DEMO Problem #" + (i + 1));
+            activity.setTopic("Arrays");
+            activity.setDifficulty("Easy");
+            activity.setResult("Solved");
             activity.setDataSource("DEMO");
             codingActivityRepository.save(activity);
         }
@@ -140,6 +145,9 @@ public class DemoDataSeeder implements CommandLineRunner {
             event.setRepoName("demo-pathpilot/career-tracker");
             event.setEventDate(today.minusDays(offset));
             event.setOccurredAtUtc(Instant.now());
+            event.setCommitCount(1 + (idx % 3));
+            event.setPayloadSummary("Pushed " + (1 + (idx % 3)) + " commit(s) to main");
+            event.setHtmlUrl("https://github.com/demo-pathpilot/career-tracker");
             event.setDataSource("DEMO");
             githubEventRepository.save(event);
         }

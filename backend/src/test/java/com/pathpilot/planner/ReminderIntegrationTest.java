@@ -1,6 +1,7 @@
 package com.pathpilot.planner;
 
 import com.pathpilot.coding.CodingActivityRepository;
+import com.pathpilot.github.ConnectedAccountRepository;
 import com.pathpilot.github.GithubEventRepository;
 import com.pathpilot.job.JobApplicationRepository;
 import com.pathpilot.project.ProjectMilestoneRepository;
@@ -74,6 +75,7 @@ class ReminderIntegrationTest {
     @MockitoBean private NotificationPreferencesRepository preferencesRepository;
     @MockitoBean private CodingActivityRepository codingActivityRepository;
     @MockitoBean private GithubEventRepository githubEventRepository;
+    @MockitoBean private ConnectedAccountRepository connectedAccountRepository;
     @MockitoBean private ProjectRepository projectRepository;
     @MockitoBean private ProjectMilestoneRepository projectMilestoneRepository;
     @MockitoBean private JobApplicationRepository jobApplicationRepository;
