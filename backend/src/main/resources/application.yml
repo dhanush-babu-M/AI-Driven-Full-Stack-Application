@@ -1,0 +1,43 @@
+app:
+  name: PathPilot
+  tagline: Track . Learn . Grow
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:30}
+    cookie-name: ${JWT_COOKIE_NAME:pathpilot_token}
+    cookie-secure: ${JWT_COOKIE_SECURE:true}
+    cookie-same-site: ${JWT_COOKIE_SAME_SITE:Lax}
+  rate-limit:
+    auth-max-attempts: ${AUTH_RATE_LIMIT_MAX:5}
+    auth-window-seconds: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:60}
+
+spring:
+  application:
+    name: ${app.name}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    time-zone: UTC
+
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+    path: /swagger-ui.html

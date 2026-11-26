@@ -1,0 +1,33 @@
+# Environment variables & secrets (NEVER commit real secrets)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Java / Maven build outputs
+target/
+**/target/
+*.jar
+*.war
+*.class
+
+# Node / Vite build outputs
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
