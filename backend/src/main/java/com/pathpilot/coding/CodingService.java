@@ -207,6 +207,8 @@ public class CodingService {
         return entries.stream()
                 .map(h -> new RecordHistoryDto(
                         h.getId(),
+                        h.getEntityType(),
+                        h.getEntityId(),
                         h.getActionType(),
                         h.getActorSource(),
                         h.getRecordDate(),

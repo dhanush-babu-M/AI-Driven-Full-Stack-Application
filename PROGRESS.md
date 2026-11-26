@@ -51,9 +51,10 @@
 - [ ] Future: Web Push with a Service Worker and push service for background reminder delivery when PathPilot tabs are closed
 
 ## Phase 5: Coding Activity & GitHub Integration
-- [ ] Backend CRUD for `coding_activities` (manual logging + LeetCode/CodingBat profile links, `MANUAL` badge)
-- [ ] Backend `connected_accounts` & official GitHub REST API sync into `github_events` (`IMPORTED` badge)
-- [ ] `/app/coding` page (matching user wireframe) with Recharts visualizations
+- [x] Backend CRUD for `coding_activities` (manual logging + LeetCode/CodingBat profile links, `MANUAL` badge, `record_history` audit trail, `V7__coding_and_github_fields.sql`) (2026-11-26)
+- [x] Backend `connected_accounts` (AES-GCM encrypted optional token) & official GitHub REST API v2022-11-28 sync into `github_events` (`IMPORTED` badge, `@Scheduled` twice-daily sync, `(user_id, external_event_id)` de-duplication, rate-limit handling) (2026-11-26)
+- [x] `/app/coding` ("Developer Activity") page with Mon–Sun heatmap (`GitHub imported | Manual practice | Combined`), day drawer, External Profiles + repos card, Recharts activity summary, honest streaks, neutral inactive periods, rule banner, and practice table (2026-11-26)
+- [ ] **Phase 5A Test Gate**: Verify empty states + "Log your first practice", log 3 practice entries on different days and verify heatmap/streak/summary/drawer, sync a public GitHub username twice without duplicates, verify rate-limit handling, and confirm no LeetCode/CodingBat import claims
 
 ## Phase 6: Projects & Job Applications
 - [ ] Backend CRUD for `projects`, `project_milestones`, and `project_worklogs`

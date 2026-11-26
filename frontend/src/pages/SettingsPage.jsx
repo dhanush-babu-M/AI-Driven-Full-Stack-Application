@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
   fetchNotificationPreferences,
+  fetchProfileLinks,
   updateNotificationPreferences,
+  updateProfileLinks,
 } from '../api/client';
 import Card from '../components/Card';
 import PageHeader from '../components/PageHeader';
@@ -33,19 +35,36 @@ export default function SettingsPage() {
   const [quietHoursEnd, setQuietHoursEnd] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [githubUsername, setGithubUsername] = useState('');
+  const [leetcodeUrl, setLeetcodeUrl] = useState('');
+  const [codingbatUrl, setCodingbatUrl] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [savingLinks, setSavingLinks] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'info' });
 
   useEffect(() => {
     let active = true;
-    fetchNotificationPreferences()
-      .then((prefs) => {
-        if (!active || !prefs) return;
-        setBrowserEnabled(Boolean(prefs.browserEnabled));
-        setLeadMinutes(prefs.leadMinutes ?? 10);
-        setQuietHoursStart(prefs.quietHoursStart ? prefs.quietHoursStart.slice(0, 5) : '');
-        setQuietHoursEnd(prefs.quietHoursEnd ? prefs.quietHoursEnd.slice(0, 5) : '');
+    Promise.all([
+      fetchNotificationPreferences().catch(() => null),
+      fetchProfileLinks().catch(() => null),
+    ])
+      .then(([prefs, links]) => {
+        if (!active) return;
+        if (prefs) {
+          setBrowserEnabled(Boolean(prefs.browserEnabled));
+          setLeadMinutes(prefs.leadMinutes ?? 10);
+          setQuietHoursStart(prefs.quietHoursStart ? prefs.quietHoursStart.slice(0, 5) : '');
+          setQuietHoursEnd(prefs.quietHoursEnd ? prefs.quietHoursEnd.slice(0, 5) : '');
+        }
+        if (links) {
+          setGithubUsername(links.githubUsername || '');
+          setLeetcodeUrl(links.leetcodeUrl || '');
+          setCodingbatUrl(links.codingbatUrl || '');
+          setPortfolioUrl(links.portfolioUrl || '');
+          setLinkedinUrl(links.linkedinUrl || '');
+        }
       })
-      .catch(() => {})
       .finally(() => {
         if (active) setLoading(false);
       });
@@ -112,6 +131,31 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveLinks = async (e) => {
+    e.preventDefault();
+    if (savingLinks) return;
+    setSavingLinks(true);
+    try {
+      const updated = await updateProfileLinks({
+        githubUsername: githubUsername.trim(),
+        leetcodeUrl: leetcodeUrl.trim(),
+        codingbatUrl: codingbatUrl.trim(),
+        portfolioUrl: portfolioUrl.trim(),
+        linkedinUrl: linkedinUrl.trim(),
+      });
+      setGithubUsername(updated.githubUsername || '');
+      setLeetcodeUrl(updated.leetcodeUrl || '');
+      setCodingbatUrl(updated.codingbatUrl || '');
+      setPortfolioUrl(updated.portfolioUrl || '');
+      setLinkedinUrl(updated.linkedinUrl || '');
+      setToast({ message: 'Profile links saved.', type: 'success' });
+    } catch (err) {
+      setToast({ message: err?.message || 'Unable to save profile links.', type: 'error' });
+    } finally {
+      setSavingLinks(false);
+    }
+  };
+
   const permissionBadge = {
     granted: { text: 'Granted', classes: 'bg-completed-soft text-completed border-completed/25' },
     denied: { text: 'Denied', classes: 'bg-skipped-soft text-skipped border-skipped/25' },
@@ -140,6 +184,101 @@ export default function SettingsPage() {
             <dd className="mt-1 font-semibold text-ink">{user?.timeZone || 'Asia/Kolkata'}</dd>
           </div>
         </dl>
+      </Card>
+
+      {/* External Profile Links */}
+      <Card>
+        <div className="pb-3 border-b border-border/70">
+          <h2 className="text-base font-bold text-ink">Developer Profile Links</h2>
+          <p className="text-xs text-muted mt-0.5">
+            Only GitHub public activity is synced via the official REST API. LeetCode, CodingBat,
+            LinkedIn, and Portfolio URLs are stored as reference links only (never scraped).
+          </p>
+        </div>
+
+        <form onSubmit={handleSaveLinks} className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="link-github" className="block text-xs font-semibold text-ink mb-1">
+                GitHub Username
+              </label>
+              <input
+                id="link-github"
+                type="text"
+                value={githubUsername}
+                onChange={(e) => setGithubUsername(e.target.value)}
+                placeholder="e.g. octocat"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="link-leetcode" className="block text-xs font-semibold text-ink mb-1">
+                LeetCode Profile URL
+              </label>
+              <input
+                id="link-leetcode"
+                type="url"
+                value={leetcodeUrl}
+                onChange={(e) => setLeetcodeUrl(e.target.value)}
+                placeholder="https://leetcode.com/u/username"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="link-codingbat" className="block text-xs font-semibold text-ink mb-1">
+                CodingBat Profile URL
+              </label>
+              <input
+                id="link-codingbat"
+                type="url"
+                value={codingbatUrl}
+                onChange={(e) => setCodingbatUrl(e.target.value)}
+                placeholder="https://codingbat.com/java"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="link-linkedin" className="block text-xs font-semibold text-ink mb-1">
+                LinkedIn Profile URL
+              </label>
+              <input
+                id="link-linkedin"
+                type="url"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+                placeholder="https://linkedin.com/in/username"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label htmlFor="link-portfolio" className="block text-xs font-semibold text-ink mb-1">
+                Portfolio URL
+              </label>
+              <input
+                id="link-portfolio"
+                type="url"
+                value={portfolioUrl}
+                onChange={(e) => setPortfolioUrl(e.target.value)}
+                placeholder="https://your-portfolio.dev"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={savingLinks}
+              className="rounded-pill bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+            >
+              {savingLinks ? 'Saving...' : 'Save Profile Links'}
+            </button>
+          </div>
+        </form>
       </Card>
 
       {/* Notifications Section */}

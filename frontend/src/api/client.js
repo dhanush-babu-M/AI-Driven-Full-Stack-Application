@@ -221,4 +221,96 @@ export function fetchUpcomingReminders(hours = 24) {
   return apiFetch(`/api/reminders/upcoming?hours=${encodeURIComponent(hours)}`);
 }
 
+export function fetchCodingActivities(params = {}) {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') qs.set(k, v);
+  });
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return apiFetch(`/api/coding${suffix}`);
+}
+
+export function createCodingActivity(payload) {
+  return apiFetch('/api/coding', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateCodingActivity(id, payload) {
+  return apiFetch(`/api/coding/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCodingActivity(id) {
+  return apiFetch(`/api/coding/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function fetchCodingHistory(id) {
+  return apiFetch(`/api/coding/${id}/history`);
+}
+
+export function fetchCodingHeatmap({ from, to, source = 'combined' } = {}) {
+  const qs = new URLSearchParams({ source });
+  if (from) qs.set('from', from);
+  if (to) qs.set('to', to);
+  return apiFetch(`/api/coding/heatmap?${qs.toString()}`);
+}
+
+export function fetchCodingDayDetails(dateStr) {
+  return apiFetch(`/api/coding/day/${encodeURIComponent(dateStr)}`);
+}
+
+export function fetchCodingStreak({ from, to } = {}) {
+  const qs = new URLSearchParams();
+  if (from) qs.set('from', from);
+  if (to) qs.set('to', to);
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return apiFetch(`/api/coding/streak${suffix}`);
+}
+
+export function connectGitHub(payload) {
+  return apiFetch('/api/github/connect', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchGitHubStatus() {
+  return apiFetch('/api/github/status');
+}
+
+export function syncGitHub() {
+  return apiFetch('/api/github/sync', {
+    method: 'POST',
+  });
+}
+
+export function fetchGitHubRepos() {
+  return apiFetch('/api/github/repos');
+}
+
+export function fetchGitHubEvents({ from, to } = {}) {
+  const qs = new URLSearchParams();
+  if (from) qs.set('from', from);
+  if (to) qs.set('to', to);
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return apiFetch(`/api/github/events${suffix}`);
+}
+
+export function fetchProfileLinks() {
+  return apiFetch('/api/profile/links');
+}
+
+export function updateProfileLinks(payload) {
+  return apiFetch('/api/profile/links', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
 export { API_BASE_URL };

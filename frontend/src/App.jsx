@@ -3,6 +3,7 @@ import { ProtectedRoute, PublicOnlyRoute } from './components/RouteGuards';
 import PlannerChooser from './components/PlannerChooser';
 import { AuthProvider } from './context/AuthContext';
 import AppShell from './layouts/AppShell';
+import CodingActivityPage from './pages/CodingActivityPage';
 import DailyPlannerPage from './pages/DailyPlannerPage';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
@@ -49,10 +50,7 @@ export default function App() {
           <Route path="planner/weekly" element={<WeeklyPlannerPage />} />
           <Route path="planner/monthly" element={<MonthlyPlannerPage />} />
 
-          <Route
-            path="coding"
-            element={<PlaceholderPage title="Coding Activity" breadcrumb="Practice & Sync" />}
-          />
+          <Route path="coding" element={<CodingActivityPage />} />
           <Route
             path="projects"
             element={

@@ -147,4 +147,24 @@ All error responses (`400`, `401`, `409`, `429`, `500`) return:
 - `GET /api/notifications/preferences` & `PUT /api/notifications/preferences` — Reads/updates `browserEnabled`, `leadMinutes` (`0..120`, e.g. `0, 5, 10, 30`), `quietHoursStart`, and `quietHoursEnd`. Updating `leadMinutes` recalculates `reminder_at_utc` for active reminder-enabled tasks.
 - `GET /api/reminders/upcoming?hours=24` — Returns active reminder-enabled tasks due from the start of the user's local today through the next `hours` hours, including `inQuietHours`.
 
+---
+
+## Coding Activity, Profile Links & GitHub Sync (All Require Auth & Filter by `CurrentUser.id()`)
+
+- `GET /api/coding?from=&to=&platform=&topic=&result=&page=0&size=10` — Lists non-soft-deleted manual coding practice entries in the date range with platform/topic/result filtering and pagination.
+- `POST /api/coding` — Logs a manual coding practice entry (`MANUAL` source, Bean Validation) and writes a `CREATE` audit row to `record_history`.
+- `PUT /api/coding/{id}` — Updates a manual coding practice entry owned by `CurrentUser.id()` and writes an `UPDATE` audit row to `record_history`.
+- `DELETE /api/coding/{id}` — Soft-deletes a manual coding practice entry (`deleted_at_utc`) and preserves audit history in `record_history`.
+- `GET /api/coding/{id}/history` — Returns `record_history` entries for that coding activity.
+- `GET /api/coding/heatmap?from=&to=&source=github|manual|combined` — Returns per-day counts separated by source (`githubCount`, `githubCommitCount`, `manualCount`, `manualSolvedCount`, `combinedCategory`) so imported and manual activity are never silently blended.
+- `GET /api/coding/day/{date}` — Returns imported `github_events`, manual `coding_activities`, and `learning_records` for the `"Activity on <date>"` drawer.
+- `GET /api/coding/streak?from=&to=` — Computes attempted/solved totals, honest current & longest streak (`ProgressCalculator`), practice days %, neutral `"no record"` inactive periods, Recharts chart series, and a deterministic `RULE` encouragement banner.
+- `GET /api/profile/links` & `PUT /api/profile/links` — Reads/updates `githubUsername`, `leetcodeUrl`, `codingbatUrl`, `portfolioUrl`, and `linkedinUrl` on `user_profiles` (LeetCode/CodingBat are bookmark links only; never scraped).
+- `POST /api/github/connect` — Verifies a GitHub username via `GET https://api.github.com/users/{username}`, optionally encrypts a personal access token (AES-GCM, never returned to the browser), saves `connected_accounts` + `user_profiles.github_username`, and runs an initial sync.
+- `GET /api/github/status` — Returns connection status, username, `hasToken` boolean (never the token), `lastSyncedAtUtc`, `lastSyncStatus`, `lastSyncError`, and `storedEventsCount`.
+- `POST /api/github/sync` — Fetches up to 300 public events from the last 30 days via GitHub REST API (`ETag` / `If-None-Match` conditional request support) and de-duplicates by `(user_id, external_event_id)`. Also runs twice daily (`02:00` and `14:00`) via `@Scheduled`. Returns `429` with a friendly reset message if rate-limited.
+- `GET /api/github/repos` — Returns up to 10 recently pushed public repositories (`name`, `fullName`, `language`, `pushedAtUtc`, `htmlUrl`, `stars`) from GitHub REST API.
+- `GET /api/github/events?from=&to=` — Lists stored `github_events` (`IMPORTED` / `DEMO`) for the user in the requested date range.
+
+
 
