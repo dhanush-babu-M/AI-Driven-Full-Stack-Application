@@ -22,6 +22,9 @@ public class GithubEvent {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "connected_account_id")
+    private Long connectedAccountId;
+
     @Column(name = "external_event_id", nullable = false, length = 100)
     private String externalEventId;
 
@@ -37,6 +40,15 @@ public class GithubEvent {
     @Column(name = "occurred_at_utc", nullable = false)
     private Instant occurredAtUtc;
 
+    @Column(name = "payload_summary", columnDefinition = "TEXT")
+    private String payloadSummary;
+
+    @Column(name = "commit_count", nullable = false)
+    private int commitCount = 0;
+
+    @Column(name = "html_url", length = 500)
+    private String htmlUrl;
+
     @Column(name = "data_source", nullable = false, length = 20)
     private String dataSource = "IMPORTED";
 
@@ -49,8 +61,11 @@ public class GithubEvent {
     }
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+    public Long getConnectedAccountId() { return connectedAccountId; }
+    public void setConnectedAccountId(Long connectedAccountId) { this.connectedAccountId = connectedAccountId; }
     public String getExternalEventId() { return externalEventId; }
     public void setExternalEventId(String externalEventId) { this.externalEventId = externalEventId; }
     public String getEventType() { return eventType; }
@@ -61,6 +76,13 @@ public class GithubEvent {
     public void setEventDate(LocalDate eventDate) { this.eventDate = eventDate; }
     public Instant getOccurredAtUtc() { return occurredAtUtc; }
     public void setOccurredAtUtc(Instant occurredAtUtc) { this.occurredAtUtc = occurredAtUtc; }
+    public String getPayloadSummary() { return payloadSummary; }
+    public void setPayloadSummary(String payloadSummary) { this.payloadSummary = payloadSummary; }
+    public int getCommitCount() { return commitCount; }
+    public void setCommitCount(int commitCount) { this.commitCount = commitCount; }
+    public String getHtmlUrl() { return htmlUrl; }
+    public void setHtmlUrl(String htmlUrl) { this.htmlUrl = htmlUrl; }
     public String getDataSource() { return dataSource; }
     public void setDataSource(String dataSource) { this.dataSource = dataSource; }
+    public Instant getCreatedAtUtc() { return createdAtUtc; }
 }

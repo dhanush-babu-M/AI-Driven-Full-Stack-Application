@@ -22,6 +22,7 @@ public record TaskDto(
         Long rescheduledToTaskId,
         boolean reminderEnabled,
         LocalTime reminderTime,
+        Instant reminderAtUtc,
         String dataSource,
         Instant createdAtUtc,
         Instant updatedAtUtc

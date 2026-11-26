@@ -6,6 +6,7 @@ import com.pathpilot.job.JobApplicationRepository;
 import com.pathpilot.planner.DailyLogRepository;
 import com.pathpilot.planner.GoalRepository;
 import com.pathpilot.planner.LearningRecordRepository;
+import com.pathpilot.planner.NotificationPreferencesRepository;
 import com.pathpilot.planner.RecordHistoryRepository;
 import com.pathpilot.planner.TaskRepository;
 import com.pathpilot.planner.WeeklyReviewRepository;
@@ -91,6 +92,9 @@ class AuthIntegrationTest {
 
     @MockitoBean
     private WeeklyReviewRepository weeklyReviewRepository;
+
+    @MockitoBean
+    private NotificationPreferencesRepository notificationPreferencesRepository;
 
     @MockitoBean
     private CodingActivityRepository codingActivityRepository;

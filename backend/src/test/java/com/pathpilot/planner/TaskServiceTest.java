@@ -5,6 +5,7 @@ import com.pathpilot.planner.dto.CarryForwardRequest;
 import com.pathpilot.planner.dto.TaskDto;
 import com.pathpilot.planner.dto.TaskRequest;
 import com.pathpilot.planner.dto.TaskStatusRequest;
+import com.pathpilot.user.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,11 +41,23 @@ class TaskServiceTest {
     @Mock
     private RecordHistoryRepository recordHistoryRepository;
 
+    @Mock
+    private NotificationPreferencesRepository notificationPreferencesRepository;
+
+    @Mock
+    private UserProfileRepository userProfileRepository;
+
     private TaskService taskService;
 
     @BeforeEach
     void setUp() {
-        taskService = new TaskService(taskRepository, dailyLogRepository, recordHistoryRepository);
+        taskService = new TaskService(
+                taskRepository,
+                dailyLogRepository,
+                recordHistoryRepository,
+                notificationPreferencesRepository,
+                userProfileRepository
+        );
     }
 
     @Test
@@ -58,6 +71,7 @@ class TaskServiceTest {
                 LocalTime.of(8, 30),
                 "MEDIUM",
                 "PLANNED",
+                null,
                 null
         );
 
@@ -133,7 +147,8 @@ class TaskServiceTest {
                 LocalTime.of(11, 0),
                 "HIGH",
                 "COMPLETED",
-                "Done"
+                "Done",
+                null
         );
 
         taskService.update(1L, 20L, edit);

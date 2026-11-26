@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import MonthlyPlannerPage from './pages/MonthlyPlannerPage';
 import PlaceholderPage from './pages/PlaceholderPage';
+import SettingsPage from './pages/SettingsPage';
 import WeeklyPlannerPage from './pages/WeeklyPlannerPage';
 import WelcomePage from './pages/WelcomePage';
 
@@ -68,7 +69,7 @@ export default function App() {
           />
           <Route
             path="settings"
-            element={<PlaceholderPage title="Settings" breadcrumb="Account & Preferences" />}
+            element={<SettingsPage />}
           />
         </Route>
 

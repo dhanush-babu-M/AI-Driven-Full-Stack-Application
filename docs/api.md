@@ -140,4 +140,11 @@ All error responses (`400`, `401`, `409`, `429`, `500`) return:
 - `GET /api/progress/weekly?start=YYYY-MM-DD` — Weekly completion metrics, category rates, per-day counts (Mon–Sun), and tasks.
 - `GET /api/progress/monthly?month=YYYY-MM` — Monthly completion metrics (same `ProgressCalculator` math as Dashboard), category rates, change vs previous month (`null` if previous month has no data), day summaries, and dated milestones.
 
+---
+
+## Reminders & Notification Preferences (In-App Option A)
+
+- `GET /api/notifications/preferences` & `PUT /api/notifications/preferences` — Reads/updates `browserEnabled`, `leadMinutes` (`0..120`, e.g. `0, 5, 10, 30`), `quietHoursStart`, and `quietHoursEnd`. Updating `leadMinutes` recalculates `reminder_at_utc` for active reminder-enabled tasks.
+- `GET /api/reminders/upcoming?hours=24` — Returns active reminder-enabled tasks due from the start of the user's local today through the next `hours` hours, including `inQuietHours`.
+
 

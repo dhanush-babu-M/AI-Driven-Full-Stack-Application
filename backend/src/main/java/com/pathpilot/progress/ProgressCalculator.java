@@ -1,11 +1,15 @@
 package com.pathpilot.progress;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Pure calculation engine for all PathPilot progress metrics.
@@ -109,8 +113,70 @@ public final class ProgressCalculator {
         return roundOneDecimal((uniqueDays * 100.0) / daysInPeriod);
     }
 
+    /**
+     * Honest longest streak: maximum run of consecutive calendar days with a recorded entry.
+     */
+    public static int calculateLongestCodingStreak(Collection<LocalDate> recordedDates) {
+        if (recordedDates == null || recordedDates.isEmpty()) {
+            return 0;
+        }
+        TreeSet<LocalDate> sorted = new TreeSet<>(recordedDates);
+        int longest = 0;
+        int current = 0;
+        LocalDate prev = null;
+        for (LocalDate d : sorted) {
+            if (prev != null && prev.plusDays(1).equals(d)) {
+                current++;
+            } else {
+                current = 1;
+            }
+            if (current > longest) {
+                longest = current;
+            }
+            prev = d;
+        }
+        return longest;
+    }
+
+    /**
+     * Lists contiguous date ranges inside [from, to] with no recorded coding activity,
+     * reported neutrally as "no record" (never "failed").
+     */
+    public static List<InactivePeriod> findInactivePeriods(
+            LocalDate from,
+            LocalDate to,
+            Collection<LocalDate> recordedDates
+    ) {
+        if (from == null || to == null || to.isBefore(from)) {
+            return List.of();
+        }
+        Set<LocalDate> active = recordedDates == null ? Collections.emptySet() : new HashSet<>(recordedDates);
+        List<InactivePeriod> periods = new ArrayList<>();
+        LocalDate gapStart = null;
+        for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
+            if (!active.contains(d)) {
+                if (gapStart == null) {
+                    gapStart = d;
+                }
+            } else if (gapStart != null) {
+                LocalDate gapEnd = d.minusDays(1);
+                int days = (int) ChronoUnit.DAYS.between(gapStart, gapEnd) + 1;
+                periods.add(new InactivePeriod(gapStart, gapEnd, days));
+                gapStart = null;
+            }
+        }
+        if (gapStart != null) {
+            int days = (int) ChronoUnit.DAYS.between(gapStart, to) + 1;
+            periods.add(new InactivePeriod(gapStart, to, days));
+        }
+        return periods;
+    }
+
     private static double roundOneDecimal(double value) {
         return Math.round(value * 10.0) / 10.0;
+    }
+
+    public record InactivePeriod(LocalDate startDate, LocalDate endDate, int days) {
     }
 
     public record TaskSummary(

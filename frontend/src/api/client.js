@@ -206,4 +206,19 @@ export function saveWeeklyReview(payload) {
   });
 }
 
+export function fetchNotificationPreferences() {
+  return apiFetch('/api/notifications/preferences');
+}
+
+export function updateNotificationPreferences(payload) {
+  return apiFetch('/api/notifications/preferences', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchUpcomingReminders(hours = 24) {
+  return apiFetch(`/api/reminders/upcoming?hours=${encodeURIComponent(hours)}`);
+}
+
 export { API_BASE_URL };

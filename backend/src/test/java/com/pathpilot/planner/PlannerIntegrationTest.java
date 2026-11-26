@@ -95,6 +95,9 @@ class PlannerIntegrationTest {
     private WeeklyReviewRepository weeklyReviewRepository;
 
     @MockitoBean
+    private NotificationPreferencesRepository notificationPreferencesRepository;
+
+    @MockitoBean
     private CodingActivityRepository codingActivityRepository;
 
     @MockitoBean

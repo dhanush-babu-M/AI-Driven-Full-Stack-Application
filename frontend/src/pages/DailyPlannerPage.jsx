@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { addDays, endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
 import {
   carryForwardTasks,
@@ -25,6 +26,7 @@ import SourceTag from '../components/SourceTag';
 import StatusChip from '../components/StatusChip';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
+import { notifyRemindersChanged } from '../hooks/useReminders';
 import {
   TASK_CATEGORIES,
   TASK_PRIORITIES,
@@ -66,9 +68,18 @@ function makeEmptyForm(taskDate) {
 
 export default function DailyPlannerPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const queryDate = searchParams.get('date');
+
   const [selectedDate, setSelectedDate] = useState(() =>
-    getTodayIsoInTimeZone(user?.timeZone)
+    queryDate || getTodayIsoInTimeZone(user?.timeZone)
   );
+
+  useEffect(() => {
+    if (queryDate && /^\d{4}-\d{2}-\d{2}$/.test(queryDate)) {
+      setSelectedDate(queryDate);
+    }
+  }, [queryDate]);
 
   const [tasks, setTasks] = useState([]);
   const [unfinishedTasks, setUnfinishedTasks] = useState([]);
@@ -270,6 +281,7 @@ export default function DailyPlannerPage() {
       }
       setTaskModalOpen(false);
       setForceChooser(false);
+      notifyRemindersChanged();
       await loadDayData();
     } catch (err) {
       if (err?.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
@@ -287,6 +299,7 @@ export default function DailyPlannerPage() {
     try {
       await updateTaskStatus(task.id, { status: nextStatus, ...extra });
       showToast(`Marked "${task.title}" as ${nextStatus.toLowerCase()}.`);
+      notifyRemindersChanged();
       await loadDayData();
     } catch (err) {
       showToast(err?.message || 'Could not update task status.', 'error');
@@ -298,6 +311,7 @@ export default function DailyPlannerPage() {
     try {
       await deleteTask(task.id);
       showToast(`Removed "${task.title}" (kept in audit history).`);
+      notifyRemindersChanged();
       await loadDayData();
     } catch (err) {
       showToast(err?.message || 'Could not delete task.', 'error');
@@ -345,9 +359,10 @@ export default function DailyPlannerPage() {
       });
       showToast(
         nextEnabled
-          ? 'Reminder saved (notifications arrive in Prompt 7).'
+          ? 'Reminder saved for open-tab alerts.'
           : 'Reminder turned off.'
       );
+      notifyRemindersChanged();
       await loadDayData();
     } catch (err) {
       showToast(err?.message || 'Could not save reminder choice.', 'error');
@@ -810,6 +825,15 @@ export default function DailyPlannerPage() {
                           >
                             View history
                           </button>
+                          {task.startTime && !isRescheduled && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleMealReminder(task)}
+                              className="text-emerald-700 font-medium hover:underline"
+                            >
+                              {task.reminderEnabled ? 'Clear Reminder' : 'Set Reminder'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -4,6 +4,7 @@ import java.time.LocalTime;
 
 public record TaskReminderRequest(
         boolean enabled,
-        LocalTime reminderTime
+        LocalTime reminderTime,
+        Integer leadMinutes
 ) {
 }

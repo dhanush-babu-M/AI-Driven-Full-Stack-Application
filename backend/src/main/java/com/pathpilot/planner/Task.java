@@ -72,6 +72,9 @@ public class Task {
     @Column(name = "reminder_time")
     private LocalTime reminderTime;
 
+    @Column(name = "reminder_at_utc")
+    private Instant reminderAtUtc;
+
     @Column(name = "data_source", nullable = false, length = 20)
     private String dataSource = "MANUAL";
 
@@ -132,6 +135,8 @@ public class Task {
     public void setReminderEnabled(boolean reminderEnabled) { this.reminderEnabled = reminderEnabled; }
     public LocalTime getReminderTime() { return reminderTime; }
     public void setReminderTime(LocalTime reminderTime) { this.reminderTime = reminderTime; }
+    public Instant getReminderAtUtc() { return reminderAtUtc; }
+    public void setReminderAtUtc(Instant reminderAtUtc) { this.reminderAtUtc = reminderAtUtc; }
     public String getDataSource() { return dataSource; }
     public void setDataSource(String dataSource) { this.dataSource = dataSource; }
     public Instant getCreatedAtUtc() { return createdAtUtc; }

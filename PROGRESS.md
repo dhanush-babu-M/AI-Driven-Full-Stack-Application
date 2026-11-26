@@ -44,7 +44,11 @@
 - [x] `/app/planner/weekly` page (`WeeklyPlannerPage`, goals, Mon–Sun day tabs, task list, summary tiles, collapsible weekly review) (2026-11-26)
 - [x] `/app/planner/monthly` page (`MonthlyPlannerPage`, month calendar grid, monthly goals with `CALCULATED`/`MANUAL` badges, 4 overview rings + prev-month change chips, summary & milestones) (2026-11-26)
 - [x] `/app/dashboard` page using `ProgressCalculator` and real saved records (2026-11-26)
-- [ ] **Phase 4B Test Gate**: Verify weekly tasks hand math, week/month period isolation, Dashboard vs Monthly Planner exact match, and 360px mobile view
+- [x] Phase 4C Reminders & Notifications: `reminder_at_utc` calculation (`ZoneId` + lead time), `GET/PUT /api/notifications/preferences`, `GET /api/reminders/upcoming`, `useReminders` hook, TopBar bell list & unread count, Daily Planner `"Set Reminder"`, and `/app/settings` Notifications UI (2026-11-26)
+- [ ] **Phase 4B/4C Test Gate**: Verify weekly/monthly planner math, 2-min breakfast reminder toast + browser notification, permission denied flow, and closed-tab honesty note
+
+## Later / Future Enhancements
+- [ ] Future: Web Push with a Service Worker and push service for background reminder delivery when PathPilot tabs are closed
 
 ## Phase 5: Coding Activity & GitHub Integration
 - [ ] Backend CRUD for `coding_activities` (manual logging + LeetCode/CodingBat profile links, `MANUAL` badge)

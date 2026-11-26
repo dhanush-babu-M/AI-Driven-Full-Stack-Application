@@ -3,6 +3,9 @@ app:
     # Local development fallback only; override via JWT_SECRET env var in production
     secret: ${JWT_SECRET:pathpilot-local-dev-secret-change-in-env-at-least-32-bytes}
     cookie-secure: ${JWT_COOKIE_SECURE:false}
+  github:
+    # Local development fallback only; override via GITHUB_TOKEN_ENCRYPTION_KEY env var in production
+    token-encryption-key: ${GITHUB_TOKEN_ENCRYPTION_KEY:pathpilot-local-token-enc-key-32b}
 
 spring:
   datasource:

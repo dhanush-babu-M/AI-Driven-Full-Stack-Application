@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { APP_NAME } from '../config/app';
 import { useAuth } from '../context/AuthContext';
+import { formatTime12h } from '../utils/taskCategories';
 
 function getInitials(fullName) {
   if (!fullName) return 'U';
@@ -12,7 +13,13 @@ function getInitials(fullName) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export default function TopBar({ onOpenSidebar }) {
+export default function TopBar({
+  onOpenSidebar,
+  alerts = [],
+  upcomingReminders = [],
+  unreadCount = 0,
+  onMarkAllRead,
+}) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -86,12 +93,12 @@ export default function TopBar({ onOpenSidebar }) {
 
       {/* Right: Notification bell + User chip dropdown */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Bell icon with unread dot */}
+        {/* Bell icon with unread dot & count */}
         <div className="relative" ref={notifRef}>
           <button
             type="button"
             onClick={() => setNotifOpen((prev) => !prev)}
-            aria-label="Notifications"
+            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
             aria-expanded={notifOpen}
             className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-body hover:bg-canvas hover:text-ink transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
@@ -99,21 +106,102 @@ export default function TopBar({ onOpenSidebar }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            <span
-              className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-primary ring-2 ring-surface"
-              aria-hidden="true"
-            />
+            {unreadCount > 0 ? (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center ring-2 ring-surface">
+                {unreadCount}
+              </span>
+            ) : (
+              upcomingReminders.length > 0 && (
+                <span
+                  className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-primary ring-2 ring-surface"
+                  aria-hidden="true"
+                />
+              )
+            )}
           </button>
 
           {notifOpen && (
             <div
-              role="status"
-              className="absolute right-0 mt-2 w-64 rounded-card border border-border bg-surface p-3.5 shadow-card-hover text-xs text-body z-40"
+              role="region"
+              aria-label="Reminders list"
+              className="absolute right-0 mt-2 w-72 sm:w-80 rounded-card border border-border bg-surface p-3.5 shadow-card-hover text-xs text-body z-40 space-y-3"
             >
-              <p className="font-semibold text-ink">Notifications</p>
-              <p className="mt-1 text-muted">
-                No new alerts yet. Daily reminders will appear here in a later phase.
-              </p>
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/70">
+                <span className="font-semibold text-ink">Today&apos;s Reminders</span>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={onMarkAllRead}
+                    className="text-[11px] font-semibold text-primary hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              {alerts.length === 0 && upcomingReminders.length === 0 ? (
+                <p className="text-muted py-2">
+                  No due, missed, or upcoming reminders right now.
+                </p>
+              ) : (
+                <ul className="space-y-2 max-h-60 overflow-y-auto">
+                  {alerts.map((a) => (
+                    <li
+                      key={a.id}
+                      className={`rounded-xl border p-2.5 ${
+                        a.read
+                          ? 'border-border/70 bg-canvas/60'
+                          : 'border-primary/30 bg-primary-soft/60'
+                      }`}
+                    >
+                      <Link
+                        to={`/app/planner/daily?date=${a.taskDate}`}
+                        onClick={() => setNotifOpen(false)}
+                        className="block"
+                      >
+                        <span className="font-semibold text-ink">
+                          {a.isMissed ? 'Missed: ' : 'Due: '}
+                          {a.title}
+                        </span>
+                        <span className="block text-[11px] text-muted mt-0.5">
+                          {a.taskDate} at {a.timeLabel}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                  {upcomingReminders
+                    .filter((u) => !alerts.some((a) => a.taskId === u.taskId))
+                    .map((u) => (
+                      <li
+                        key={u.taskId}
+                        className="rounded-xl border border-border/70 bg-canvas/50 p-2.5"
+                      >
+                        <Link
+                          to={`/app/planner/daily?date=${u.taskDate}`}
+                          onClick={() => setNotifOpen(false)}
+                          className="block"
+                        >
+                          <span className="font-semibold text-ink">Upcoming: {u.title}</span>
+                          <span className="block text-[11px] text-muted mt-0.5">
+                            {u.taskDate} · {u.startTime ? formatTime12h(u.startTime) : ''}
+                            {u.inQuietHours ? ' (Quiet hours)' : ''}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                </ul>
+              )}
+
+              <div className="pt-2 border-t border-border/70 flex justify-between items-center">
+                <Link
+                  to="/app/settings"
+                  onClick={() => setNotifOpen(false)}
+                  className="text-[11px] font-semibold text-primary hover:underline"
+                >
+                  Notification settings
+                </Link>
+                <span className="text-[11px] text-muted">Open-tab only</span>
+              </div>
             </div>
           )}
         </div>

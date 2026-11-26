@@ -13,8 +13,14 @@ public record AppProperties(
         String tagline,
         CorsProperties cors,
         JwtProperties jwt,
-        RateLimitProperties rateLimit
+        RateLimitProperties rateLimit,
+        GithubProperties github
 ) {
+    public AppProperties {
+        if (github == null) {
+            github = new GithubProperties(null, 5000, 10000, null);
+        }
+    }
     public record CorsProperties(List<String> allowedOrigins) {
         public CorsProperties {
             if (allowedOrigins == null || allowedOrigins.isEmpty()) {
@@ -53,6 +59,25 @@ public record AppProperties(
             }
             if (authWindowSeconds <= 0) {
                 authWindowSeconds = 60;
+            }
+        }
+    }
+
+    public record GithubProperties(
+            String apiBaseUrl,
+            int connectTimeoutMs,
+            int readTimeoutMs,
+            String tokenEncryptionKey
+    ) {
+        public GithubProperties {
+            if (apiBaseUrl == null || apiBaseUrl.isBlank()) {
+                apiBaseUrl = "https://api.github.com";
+            }
+            if (connectTimeoutMs <= 0) {
+                connectTimeoutMs = 5000;
+            }
+            if (readTimeoutMs <= 0) {
+                readTimeoutMs = 10000;
             }
         }
     }

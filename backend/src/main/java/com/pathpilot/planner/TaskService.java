@@ -8,6 +8,8 @@ import com.pathpilot.planner.dto.TaskDto;
 import com.pathpilot.planner.dto.TaskReminderRequest;
 import com.pathpilot.planner.dto.TaskRequest;
 import com.pathpilot.planner.dto.TaskStatusRequest;
+import com.pathpilot.user.UserProfile;
+import com.pathpilot.user.UserProfileRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,15 +33,21 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final DailyLogRepository dailyLogRepository;
     private final RecordHistoryRepository recordHistoryRepository;
+    private final NotificationPreferencesRepository notificationPreferencesRepository;
+    private final UserProfileRepository userProfileRepository;
 
     public TaskService(
             TaskRepository taskRepository,
             DailyLogRepository dailyLogRepository,
-            RecordHistoryRepository recordHistoryRepository
+            RecordHistoryRepository recordHistoryRepository,
+            NotificationPreferencesRepository notificationPreferencesRepository,
+            UserProfileRepository userProfileRepository
     ) {
         this.taskRepository = taskRepository;
         this.dailyLogRepository = dailyLogRepository;
         this.recordHistoryRepository = recordHistoryRepository;
+        this.notificationPreferencesRepository = notificationPreferencesRepository;
+        this.userProfileRepository = userProfileRepository;
     }
 
     @Transactional(readOnly = true)
@@ -129,6 +137,12 @@ public class TaskService {
         task.setNotes(trimToNull(request.notes()));
         task.setDataSource("MANUAL");
 
+        if (Boolean.TRUE.equals(request.reminderEnabled()) && request.startTime() != null) {
+            task.setReminderEnabled(true);
+            task.setReminderTime(request.startTime());
+            task.setReminderAtUtc(computeTaskReminderAtUtc(userId, request.taskDate(), request.startTime(), null));
+        }
+
         Task saved = taskRepository.save(task);
         ensureDayRecorded(userId, saved.getTaskDate());
         writeHistory(userId, saved.getId(), "CREATED", saved.getTaskDate(),
@@ -156,6 +170,23 @@ public class TaskService {
         task.setStatus(status.name());
         task.setDurationMinutes(computeDurationMinutes(request.startTime(), request.endTime()));
         task.setNotes(trimToNull(request.notes()));
+
+        if (request.reminderEnabled() != null) {
+            if (Boolean.TRUE.equals(request.reminderEnabled()) && request.startTime() != null) {
+                task.setReminderEnabled(true);
+                task.setReminderTime(request.startTime());
+            } else if (Boolean.FALSE.equals(request.reminderEnabled())) {
+                task.setReminderEnabled(false);
+                task.setReminderAtUtc(null);
+            }
+        }
+        if (task.isReminderEnabled()) {
+            Instant nextUtc = computeTaskReminderAtUtc(userId, task.getTaskDate(), task.getStartTime(), null);
+            task.setReminderAtUtc(nextUtc);
+            if (nextUtc == null) {
+                task.setReminderEnabled(false);
+            }
+        }
 
         Task saved = taskRepository.save(task);
         String newSnapshot = snapshotTask(saved);
@@ -207,12 +238,28 @@ public class TaskService {
     @Transactional
     public TaskDto updateReminder(Long userId, Long taskId, TaskReminderRequest request) {
         Task task = requireOwnedTask(userId, taskId);
-        task.setReminderEnabled(request.enabled());
-        task.setReminderTime(request.reminderTime() != null ? request.reminderTime() : task.getStartTime());
+        if (request.enabled()) {
+            if (task.getStartTime() == null) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "NO_START_TIME",
+                        "Add a start time to this task before enabling a reminder.",
+                        Map.of("startTime", "Start time is required for reminders.")
+                );
+            }
+            task.setReminderEnabled(true);
+            task.setReminderTime(request.reminderTime() != null ? request.reminderTime() : task.getStartTime());
+            task.setReminderAtUtc(computeTaskReminderAtUtc(
+                    userId, task.getTaskDate(), task.getStartTime(), request.leadMinutes()
+            ));
+        } else {
+            task.setReminderEnabled(false);
+            task.setReminderAtUtc(null);
+        }
         Task saved = taskRepository.save(task);
         writeHistory(userId, saved.getId(), "REMINDER_UPDATED", saved.getTaskDate(),
                 saved.isReminderEnabled()
-                        ? "Reminder enabled for " + (saved.getReminderTime() != null ? saved.getReminderTime() : "scheduled time")
+                        ? "Reminder enabled (" + saved.getReminderAtUtc() + ")"
                         : "Reminder disabled");
         return toDto(saved);
     }
@@ -307,8 +354,31 @@ public class TaskService {
         copy.setCarriedFromTaskId(original.getId());
         copy.setReminderEnabled(original.isReminderEnabled());
         copy.setReminderTime(original.getReminderTime());
+        if (copy.isReminderEnabled() && copy.getStartTime() != null) {
+            copy.setReminderAtUtc(computeTaskReminderAtUtc(userId, targetDate, copy.getStartTime(), null));
+        }
         copy.setDataSource("MANUAL");
         return taskRepository.save(copy);
+    }
+
+    private Instant computeTaskReminderAtUtc(
+            Long userId,
+            LocalDate taskDate,
+            LocalTime startTime,
+            Integer overrideLeadMinutes
+    ) {
+        if (taskDate == null || startTime == null) {
+            return null;
+        }
+        int leadMinutes = overrideLeadMinutes != null
+                ? Math.max(0, overrideLeadMinutes)
+                : notificationPreferencesRepository.findByUserId(userId)
+                        .map(NotificationPreferences::getLeadMinutes)
+                        .orElse(10);
+        String timeZone = userProfileRepository.findByUserId(userId)
+                .map(UserProfile::getTimeZone)
+                .orElse(UserProfile.DEFAULT_TIME_ZONE);
+        return ReminderTimeCalculator.computeReminderAtUtc(taskDate, startTime, leadMinutes, timeZone);
     }
 
     private Task requireOwnedTask(Long userId, Long taskId) {
@@ -437,6 +507,7 @@ public class TaskService {
                 task.getRescheduledToTaskId(),
                 task.isReminderEnabled(),
                 task.getReminderTime(),
+                task.getReminderAtUtc(),
                 task.getDataSource(),
                 task.getCreatedAtUtc(),
                 task.getUpdatedAtUtc()

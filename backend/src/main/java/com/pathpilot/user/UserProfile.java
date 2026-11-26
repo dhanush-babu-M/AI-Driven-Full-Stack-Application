@@ -42,11 +42,20 @@ public class UserProfile {
     @Column(name = "github_url", length = 500)
     private String githubUrl;
 
+    @Column(name = "github_username", length = 100)
+    private String githubUsername;
+
     @Column(name = "linkedin_url", length = 500)
     private String linkedinUrl;
 
     @Column(name = "coding_profile_url", length = 500)
     private String codingProfileUrl;
+
+    @Column(name = "leetcode_url", length = 500)
+    private String leetcodeUrl;
+
+    @Column(name = "codingbat_url", length = 500)
+    private String codingbatUrl;
 
     @Column(name = "created_at_utc", nullable = false, updatable = false)
     private Instant createdAtUtc;
@@ -132,6 +141,14 @@ public class UserProfile {
         this.githubUrl = githubUrl;
     }
 
+    public String getGithubUsername() {
+        return githubUsername;
+    }
+
+    public void setGithubUsername(String githubUsername) {
+        this.githubUsername = githubUsername;
+    }
+
     public String getLinkedinUrl() {
         return linkedinUrl;
     }
@@ -146,6 +163,22 @@ public class UserProfile {
 
     public void setCodingProfileUrl(String codingProfileUrl) {
         this.codingProfileUrl = codingProfileUrl;
+    }
+
+    public String getLeetcodeUrl() {
+        return leetcodeUrl;
+    }
+
+    public void setLeetcodeUrl(String leetcodeUrl) {
+        this.leetcodeUrl = leetcodeUrl;
+    }
+
+    public String getCodingbatUrl() {
+        return codingbatUrl;
+    }
+
+    public void setCodingbatUrl(String codingbatUrl) {
+        this.codingbatUrl = codingbatUrl;
     }
 
     public Instant getCreatedAtUtc() {

@@ -8,6 +8,7 @@ import com.pathpilot.planner.DailyLogRepository;
 import com.pathpilot.planner.Goal;
 import com.pathpilot.planner.GoalRepository;
 import com.pathpilot.planner.LearningRecordRepository;
+import com.pathpilot.planner.NotificationPreferencesRepository;
 import com.pathpilot.planner.RecordHistoryRepository;
 import com.pathpilot.planner.Task;
 import com.pathpilot.planner.TaskRepository;
@@ -76,6 +77,7 @@ class WeeklyMonthlyIntegrationTest {
     @MockitoBean private RecordHistoryRepository recordHistoryRepository;
     @MockitoBean private GoalRepository goalRepository;
     @MockitoBean private WeeklyReviewRepository weeklyReviewRepository;
+    @MockitoBean private NotificationPreferencesRepository notificationPreferencesRepository;
     @MockitoBean private CodingActivityRepository codingActivityRepository;
     @MockitoBean private GithubEventRepository githubEventRepository;
     @MockitoBean private ProjectRepository projectRepository;

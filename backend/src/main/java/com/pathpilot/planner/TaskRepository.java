@@ -2,6 +2,7 @@ package com.pathpilot.planner;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -29,4 +30,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     );
 
     List<Task> findAllByUserIdAndGoalIdAndDeletedAtUtcIsNull(Long userId, Long goalId);
+
+    List<Task> findAllByUserIdAndReminderEnabledTrueAndStatusInAndDeletedAtUtcIsNullOrderByReminderAtUtcAsc(
+            Long userId,
+            Collection<String> statuses
+    );
+
+    List<Task> findAllByUserIdAndReminderEnabledTrueAndReminderAtUtcBetweenAndStatusInAndDeletedAtUtcIsNullOrderByReminderAtUtcAsc(
+            Long userId,
+            Instant fromUtc,
+            Instant toUtc,
+            Collection<String> statuses
+    );
 }

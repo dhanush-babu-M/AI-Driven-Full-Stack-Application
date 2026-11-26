@@ -25,6 +25,7 @@ public record TaskRequest(
 
         String priority,
         String status,
-        String notes
+        String notes,
+        Boolean reminderEnabled
 ) {
 }
