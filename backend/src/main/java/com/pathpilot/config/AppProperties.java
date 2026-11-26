@@ -21,16 +21,6 @@ public record AppProperties(
             github = new GithubProperties(null, 5000, 10000, null);
         }
     }
-
-    public AppProperties(
-            String name,
-            String tagline,
-            CorsProperties cors,
-            JwtProperties jwt,
-            RateLimitProperties rateLimit
-    ) {
-        this(name, tagline, cors, jwt, rateLimit, null);
-    }
     public record CorsProperties(List<String> allowedOrigins) {
         public CorsProperties {
             if (allowedOrigins == null || allowedOrigins.isEmpty()) {
