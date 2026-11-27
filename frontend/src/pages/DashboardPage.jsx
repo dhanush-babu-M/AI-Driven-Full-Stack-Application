@@ -238,7 +238,7 @@ export default function DashboardPage() {
       await createAiTaskProposal({
         title: draft.title,
         description: draft.description,
-        category: draft.category || 'DSA_PRACTICE',
+        category: draft.category || 'CODING_PRACTICE',
         taskDate: draft.taskDate || clock.isoDate,
         priority: draft.priority || 'MEDIUM',
       });

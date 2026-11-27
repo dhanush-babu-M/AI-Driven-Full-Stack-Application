@@ -25,7 +25,7 @@ class RuleRecommendationEngineTest {
 
         assertTrue(result.text().contains("not recorded any coding practice yet"));
         assertEquals("/app/coding", result.actionPath());
-        assertEquals("DSA_PRACTICE", result.proposedTask().category());
+        assertEquals("CODING_PRACTICE", result.proposedTask().category());
         assertEquals(today, result.proposedTask().taskDate());
     }
 
@@ -36,7 +36,7 @@ class RuleRecommendationEngineTest {
         RuleResult result = engine.evaluate(facts);
 
         assertTrue(result.text().contains("3 days"));
-        assertEquals("DSA_PRACTICE", result.proposedTask().category());
+        assertEquals("CODING_PRACTICE", result.proposedTask().category());
     }
 
     @Test
@@ -47,7 +47,7 @@ class RuleRecommendationEngineTest {
 
         assertTrue(result.text().contains("2 unfinished task(s)"));
         assertTrue(result.text().contains("Finish REST docs"));
-        assertEquals("REVISION", result.proposedTask().category());
+        assertEquals("JAVA_LEARNING", result.proposedTask().category());
     }
 
     @Test
@@ -88,7 +88,7 @@ class RuleRecommendationEngineTest {
 
         assertTrue(result.text().contains("Solve 10 DSA problems"));
         assertTrue(result.text().contains("6 of 10"));
-        assertEquals("DSA_PRACTICE", result.proposedTask().category());
+        assertEquals("CODING_PRACTICE", result.proposedTask().category());
     }
 
     @Test

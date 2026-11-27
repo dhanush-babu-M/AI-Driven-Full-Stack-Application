@@ -66,7 +66,7 @@ public class AgentService {
                 2. calculateProgress(range): range in ["today","week","month"]
                 3. findOverdueTasks(): no arguments
                 4. analyzeJobDescription(text): plain-text JD
-                5. proposeTask(title, date, category): creates a PENDING ai_proposal ONLY (never a real task). Allowed categories: JAVA_LEARNING, DSA_PRACTICE, SYSTEM_DESIGN, PROJECT_WORK, JOB_APPLICATIONS, RESUME_PORTFOLIO, MOCK_INTERVIEW, REVISION, MEALS_PERSONAL, REST_BREAK.
+                5. proposeTask(title, date, category): creates a PENDING ai_proposal ONLY (never a real task). Allowed categories: JAVA_LEARNING, SPRING_BOOT, SQL_MYSQL, REACT_FRONTEND, CODING_PRACTICE, PROJECT_DEVELOPMENT, JOB_APPLICATIONS, INTERVIEW_PREP, MEALS_PERSONAL, OTHER.
 
                 STRICT SECURITY & HONESTY RULES:
                 - NEVER pass userId/user_id in tool arguments.

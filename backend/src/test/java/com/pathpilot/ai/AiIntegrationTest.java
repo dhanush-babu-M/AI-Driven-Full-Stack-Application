@@ -174,12 +174,6 @@ class AiIntegrationTest {
         when(taskRepository.findAllByUserIdAndTaskDateBeforeAndStatusInAndDeletedAtUtcIsNullOrderByTaskDateDescPriorityAscIdAsc(
                 anyLong(), any(), anyCollection()))
                 .thenReturn(List.of());
-        when(taskRepository.findAllByUserIdAndDeletedAtUtcIsNullAndTaskDateLessThanAndStatusInOrderByTaskDateAscStartTimeAscIdAsc(
-                anyLong(), any(), anyCollection()))
-                .thenReturn(List.of());
-        when(taskRepository.findAllByUserIdAndDeletedAtUtcIsNullAndTaskDateBetweenOrderByTaskDateAscStartTimeAscIdAsc(
-                anyLong(), any(), any()))
-                .thenReturn(List.of());
 
         when(codingActivityRepository.findAllByUserIdAndDeletedAtUtcIsNullOrderByActivityDateDescIdDesc(anyLong()))
                 .thenReturn(List.of());
@@ -191,14 +185,14 @@ class AiIntegrationTest {
         when(projectWorklogRepository.findAllByUserIdAndDeletedAtUtcIsNullAndWorkDateBetweenOrderByWorkDateDescIdDesc(
                 anyLong(), any(), any()))
                 .thenReturn(List.of());
-        when(projectMilestoneRepository.findAllByUserIdAndDeletedAtUtcIsNullAndPlannedDateBetweenOrderByPlannedDateAscIdAsc(
+        when(projectMilestoneRepository.findAllByUserIdAndDeletedAtUtcIsNullAndDueDateBetweenOrderByDueDateAscIdAsc(
                 anyLong(), any(), any()))
                 .thenReturn(List.of());
-        when(jobFollowupRepository.findAllByUserIdAndDoneFalseAndFollowupDateBetweenOrderByFollowupDateAscIdAsc(
-                anyLong(), any(), any()))
+        when(jobFollowupRepository.findAllByUserIdAndStatusAndDeletedAtUtcIsNullAndDueDateLessThanEqualOrderByDueDateAscIdAsc(
+                anyLong(), anyString(), any()))
                 .thenReturn(List.of());
-        when(goalRepository.findAllByUserIdAndGoalTypeAndPeriodStartDateBetweenOrderByPeriodStartDateDescIdDesc(
-                anyLong(), anyString(), any(), any()))
+        when(goalRepository.findAllByUserIdAndPeriodTypeAndStartDateAndDeletedAtUtcIsNullOrderByIdAsc(
+                anyLong(), anyString(), any()))
                 .thenReturn(List.of());
 
         when(projectRepository.findAllByUserIdAndDeletedAtUtcIsNullOrderByUpdatedAtUtcDescIdDesc(anyLong()))
@@ -255,20 +249,26 @@ class AiIntegrationTest {
     }
 
     private Cookie registerAndGetCookie(String email, String phone) throws Exception {
-        MvcResult res = mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "fullName": "Alex Dev",
-                                  "email": "%s",
-                                  "phone": "%s",
-                                  "password": "Password123",
-                                  "confirmPassword": "Password123"
-                                }
-                                """.formatted(email, phone)))
-                .andExpect(status().isCreated())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "fullName", "Alex Dev",
+                                "email", email,
+                                "phone", phone,
+                                "password", "Password123",
+                                "confirmPassword", "Password123"
+                        ))))
+                .andExpect(status().isCreated());
+
+        MvcResult loginRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "identifier", email,
+                                "password", "Password123"
+                        ))))
+                .andExpect(status().isOk())
                 .andReturn();
-        return res.getResponse().getCookie("pathpilot_token");
+        return loginRes.getResponse().getCookie("pathpilot_token");
     }
 
     @Test
@@ -279,11 +279,12 @@ class AiIntegrationTest {
         when(llmClient.isConfigured()).thenReturn(true);
         when(llmClient.generate(any(), any())).thenReturn(new LlmResult("""
                 {
-                  "recommendation": "You have not recorded coding practice yet. Solve one Java array problem today.",
-                  "proposedTaskTitle": "Solve 1 Java array problem today",
-                  "proposedTaskCategory": "DSA_PRACTICE",
-                  "actionLabel": "Log coding",
-                  "actionPath": "/app/coding"
+                  "recommendationText": "You have not recorded coding practice yet. Solve one Java array problem today.",
+                  "proposedTask": {
+                    "title": "Solve 1 Java array problem today",
+                    "category": "CODING_PRACTICE",
+                    "reason": "Restart daily coding momentum."
+                  }
                 }
                 """, "gemini-3.5-flash-lite", "gemini"));
 
@@ -300,7 +301,7 @@ class AiIntegrationTest {
                         .content("""
                                 {
                                   "title": "Solve 1 Java array problem today",
-                                  "category": "DSA_PRACTICE",
+                                  "category": "CODING_PRACTICE",
                                   "taskDate": "2026-11-27",
                                   "priority": "HIGH"
                                 }
@@ -378,8 +379,8 @@ class AiIntegrationTest {
                 .andExpect(jsonPath("$.month").value("2026-11"))
                 .andExpect(jsonPath("$.source").value("RULE"));
 
-        // Local profile ai.rateLimitMax defaults to 30; hitting endpoint repeatedly returns 429 cleanly
-        for (int i = 0; i < 29; i++) {
+        // Default rateLimitMax is 10 per 60s; after 1 monthly summary + 9 recommendation calls, the 11th call returns 429
+        for (int i = 0; i < 9; i++) {
             mockMvc.perform(get("/api/ai/recommendation?date=2026-11-27").cookie(cookie))
                     .andExpect(status().isOk());
         }

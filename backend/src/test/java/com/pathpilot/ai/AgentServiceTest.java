@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -108,8 +109,8 @@ class AgentServiceTest {
 
     @Test
     void runAgent_enforcesMaxToolCallsAndProposeTaskNeverWritesRealTasks() {
-        when(taskRepo.findAllByUserIdAndDeletedAtUtcIsNullAndTaskDateLessThanAndStatusInOrderByTaskDateAscStartTimeAscIdAsc(
-                anyLong(), any(), any()))
+        when(taskRepo.findAllByUserIdAndTaskDateBeforeAndStatusInAndDeletedAtUtcIsNullOrderByTaskDateDescPriorityAscIdAsc(
+                anyLong(), any(), anyCollection()))
                 .thenReturn(List.of());
         when(llmClient.isConfigured()).thenReturn(true);
 
@@ -119,7 +120,7 @@ class AgentServiceTest {
                   "toolName": "proposeTask",
                   "arguments": {
                     "title": "Practice Binary Search",
-                    "category": "DSA_PRACTICE"
+                    "category": "CODING_PRACTICE"
                   },
                   "finalReply": null
                 }
@@ -130,15 +131,16 @@ class AgentServiceTest {
         AgentChatResponse response = agentService.runAgent(7L, new AgentChatRequest("Plan my practice"));
 
         assertEquals(AgentService.MAX_TOOL_CALLS, response.toolCalls().size());
-        verify(llmClient, times(AgentService.MAX_TOOL_CALLS)).generate(any(), any());
+        // 4 bounded tool steps + 1 final synthesis call (tool execution capped strictly at MAX_TOOL_CALLS = 4)
+        verify(llmClient, times(AgentService.MAX_TOOL_CALLS + 1)).generate(any(), any());
         assertEquals(AgentService.MAX_TOOL_CALLS, response.createdProposals().size());
         verify(taskRepo, never()).save(any());
     }
 
     @Test
     void runAgent_fallsBackToLocalToolsWhenLlmNotConfigured() {
-        when(taskRepo.findAllByUserIdAndDeletedAtUtcIsNullAndTaskDateLessThanAndStatusInOrderByTaskDateAscStartTimeAscIdAsc(
-                anyLong(), any(), any()))
+        when(taskRepo.findAllByUserIdAndTaskDateBeforeAndStatusInAndDeletedAtUtcIsNullOrderByTaskDateDescPriorityAscIdAsc(
+                anyLong(), any(), anyCollection()))
                 .thenReturn(List.of());
         when(codingRepo.findAllByUserIdAndDeletedAtUtcIsNullAndActivityDateBetweenOrderByActivityDateDescIdDesc(
                 anyLong(), any(), any()))
@@ -148,7 +150,7 @@ class AgentServiceTest {
         when(worklogRepo.findAllByUserIdAndDeletedAtUtcIsNullAndWorkDateBetweenOrderByWorkDateDescIdDesc(
                 anyLong(), any(), any()))
                 .thenReturn(List.of());
-        when(taskRepo.findAllByUserIdAndDeletedAtUtcIsNullAndTaskDateBetweenOrderByTaskDateAscStartTimeAscIdAsc(
+        when(taskRepo.findAllByUserIdAndTaskDateBetweenAndDeletedAtUtcIsNull(
                 anyLong(), any(), any()))
                 .thenReturn(List.of());
 

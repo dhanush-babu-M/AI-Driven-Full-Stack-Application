@@ -3,6 +3,7 @@ package com.pathpilot.ai;
 import com.pathpilot.config.AppProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -30,6 +31,7 @@ public class GeminiLlmClient implements LlmClient {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
+    @Autowired
     public GeminiLlmClient(AppProperties appProperties, ObjectMapper objectMapper) {
         this(
                 appProperties,

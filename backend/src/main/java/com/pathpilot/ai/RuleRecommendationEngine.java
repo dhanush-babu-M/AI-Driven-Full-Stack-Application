@@ -37,7 +37,7 @@ public class RuleRecommendationEngine {
                     new ProposedTaskDraftDto(
                             "Solve 1 coding problem & log notes",
                             "Log platform, topic, and takeaway in Coding Activity.",
-                            "DSA_PRACTICE",
+                            "CODING_PRACTICE",
                             facts.date(),
                             "HIGH"
                     )
@@ -53,7 +53,7 @@ public class RuleRecommendationEngine {
                     new ProposedTaskDraftDto(
                             "Solve 1 Java array problem & record what you learned",
                             "Focus on a single problem and capture key takeaways.",
-                            "DSA_PRACTICE",
+                            "CODING_PRACTICE",
                             facts.date(),
                             "HIGH"
                     )
@@ -73,7 +73,7 @@ public class RuleRecommendationEngine {
                     new ProposedTaskDraftDto(
                             "Review & finish top overdue task",
                             "Tackle or explicitly reschedule leftover work.",
-                            "REVISION",
+                            "JAVA_LEARNING",
                             facts.date(),
                             "HIGH"
                     )
@@ -144,7 +144,7 @@ public class RuleRecommendationEngine {
                     new ProposedTaskDraftDto(
                             "Complete next pending task for today",
                             "Finish one pending item before adding new scope.",
-                            "PROJECT_WORK",
+                            "PROJECT_DEVELOPMENT",
                             facts.date(),
                             "MEDIUM"
                     )
@@ -160,7 +160,7 @@ public class RuleRecommendationEngine {
                 new ProposedTaskDraftDto(
                         "Log project work or daily learning reflection",
                         "Capture concrete progress from today's work.",
-                        "PROJECT_WORK",
+                        "PROJECT_DEVELOPMENT",
                         facts.date(),
                         "LOW"
                 )
@@ -170,10 +170,10 @@ public class RuleRecommendationEngine {
     private String mapGoalCategoryToTaskCategory(String goalCategory) {
         if (goalCategory == null) return "JAVA_LEARNING";
         return switch (goalCategory.toUpperCase()) {
-            case "CODING_PROBLEMS" -> "DSA_PRACTICE";
-            case "PROJECTS" -> "PROJECT_WORK";
+            case "CODING_PROBLEMS" -> "CODING_PRACTICE";
+            case "PROJECTS" -> "PROJECT_DEVELOPMENT";
             case "JOB_APPLICATIONS" -> "JOB_APPLICATIONS";
-            case "REVISION" -> "REVISION";
+            case "REVISION" -> "INTERVIEW_PREP";
             default -> "JAVA_LEARNING";
         };
     }

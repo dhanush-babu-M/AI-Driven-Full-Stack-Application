@@ -94,13 +94,13 @@ class MonthlySummaryGrounderTest {
         MonthlyReportRepository reportRepo = mock(MonthlyReportRepository.class);
         LlmClient llmClient = mock(LlmClient.class);
 
-        when(taskRepo.findAllByUserIdAndDeletedAtUtcIsNullAndTaskDateBetweenOrderByTaskDateAscStartTimeAscIdAsc(anyLong(), any(), any()))
+        when(taskRepo.findAllByUserIdAndTaskDateBetweenAndDeletedAtUtcIsNull(anyLong(), any(), any()))
                 .thenReturn(List.of());
         when(codingRepo.findAllByUserIdAndDeletedAtUtcIsNullAndActivityDateBetweenOrderByActivityDateDescIdDesc(anyLong(), any(), any()))
                 .thenReturn(List.of());
         when(learningRepo.findAllByUserIdAndRecordDateBetweenOrderByRecordDateAscIdAsc(anyLong(), any(), any()))
                 .thenReturn(List.of());
-        when(milestoneRepo.findAllByUserIdAndDeletedAtUtcIsNullAndPlannedDateBetweenOrderByPlannedDateAscIdAsc(anyLong(), any(), any()))
+        when(milestoneRepo.findAllByUserIdAndDeletedAtUtcIsNullAndDueDateBetweenOrderByDueDateAscIdAsc(anyLong(), any(), any()))
                 .thenReturn(List.of());
         when(worklogRepo.findAllByUserIdAndDeletedAtUtcIsNullAndWorkDateBetweenOrderByWorkDateDescIdDesc(anyLong(), any(), any()))
                 .thenReturn(List.of());
