@@ -157,14 +157,33 @@ All error responses (`400`, `401`, `409`, `429`, `500`) return:
 - `DELETE /api/coding/{id}` — Soft-deletes a manual coding practice entry (`deleted_at_utc`) and preserves audit history in `record_history`.
 - `GET /api/coding/{id}/history` — Returns `record_history` entries for that coding activity.
 - `GET /api/coding/heatmap?from=&to=&source=github|manual|combined` — Returns per-day counts separated by source (`githubCount`, `githubCommitCount`, `manualCount`, `manualSolvedCount`, `combinedCategory`) so imported and manual activity are never silently blended.
-- `GET /api/coding/day/{date}` — Returns imported `github_events`, manual `coding_activities`, and `learning_records` for the `"Activity on <date>"` drawer.
+- `GET /api/coding/day/{date}` — Returns imported `github_events`, manual `coding_activities`, `learning_records`, and `project_worklogs` for the `"Activity on <date>"` drawer.
 - `GET /api/coding/streak?from=&to=` — Computes attempted/solved totals, honest current & longest streak (`ProgressCalculator`), practice days %, neutral `"no record"` inactive periods, Recharts chart series, and a deterministic `RULE` encouragement banner.
-- `GET /api/profile/links` & `PUT /api/profile/links` — Reads/updates `githubUsername`, `leetcodeUrl`, `codingbatUrl`, `portfolioUrl`, and `linkedinUrl` on `user_profiles` (LeetCode/CodingBat are bookmark links only; never scraped).
+- `GET /api/profile` & `PUT /api/profile` — Reads/updates full Settings > Profile (`timeZone`, `targetRoles`, `skills` with level `Beginner`/`Working`/`Comfortable`, plus `portfolioUrl`, `githubInput` [username or `https://github.com/...` URL], `leetcodeUrl`, `codingbatUrl`, `linkedinUrl` validated as `https://` URLs).
+- `GET /api/profile/links` & `PUT /api/profile/links` — Reads/updates `githubUsername`, `githubUrl`, `leetcodeUrl`, `codingbatUrl`, `portfolioUrl`, and `linkedinUrl` on `user_profiles` (`https://` validated; LeetCode/CodingBat are bookmark links only; never scraped).
 - `POST /api/github/connect` — Verifies a GitHub username via `GET https://api.github.com/users/{username}`, optionally encrypts a personal access token (AES-GCM, never returned to the browser), saves `connected_accounts` + `user_profiles.github_username`, and runs an initial sync.
 - `GET /api/github/status` — Returns connection status, username, `hasToken` boolean (never the token), `lastSyncedAtUtc`, `lastSyncStatus`, `lastSyncError`, and `storedEventsCount`.
 - `POST /api/github/sync` — Fetches up to 300 public events from the last 30 days via GitHub REST API (`ETag` / `If-None-Match` conditional request support) and de-duplicates by `(user_id, external_event_id)`. Also runs twice daily (`02:00` and `14:00`) via `@Scheduled`. Returns `429` with a friendly reset message if rate-limited.
 - `GET /api/github/repos` — Returns up to 10 recently pushed public repositories (`name`, `fullName`, `language`, `pushedAtUtc`, `htmlUrl`, `stars`) from GitHub REST API.
 - `GET /api/github/events?from=&to=` — Lists stored `github_events` (`IMPORTED` / `DEMO`) for the user in the requested date range.
+
+---
+
+## Projects, Milestones, Work Logs & Media (All Require Auth & Filter by `CurrentUser.id()`)
+
+- `GET /api/projects` — Lists non-soft-deleted projects owned by `CurrentUser.id()` with `completedMilestones`, `totalMilestones`, and `progress` (`ProgressCalculator.calculateProjectProgress`, returning `null` when 0 milestones).
+- `GET /api/projects/{projectId}` — Returns `ProjectDetailDto` (project summary, milestones, work logs newest-first, media items, and `record_history` status/audit history). Returns `404 PROJECT_NOT_FOUND` if missing or owned by another user.
+- `POST /api/projects` — Creates a project (validates `title` required, `liveUrl` and `repoUrl` as `http://`/`https://`, `status` in `PLANNED`, `CURRENT`, `COMPLETED`, `PAUSED`) and writes `CREATE` to `record_history`.
+- `PUT /api/projects/{projectId}` — Updates project fields and records `STATUS_CHANGE` or `UPDATE` in `record_history`.
+- `PATCH /api/projects/{projectId}/status` — Updates project status (`Planned`, `Current`, `Completed`, `Paused`) with optional note and records `STATUS_CHANGE` in `record_history`.
+- `DELETE /api/projects/{projectId}` — Soft-deletes the project (`deleted_at_utc`) and records `DELETE` in `record_history`.
+- `POST /api/projects/{projectId}/milestones`, `PUT /api/projects/{projectId}/milestones/{milestoneId}`, `DELETE /api/projects/{projectId}/milestones/{milestoneId}` — Creates, updates (including editable `completedDate`), and soft-deletes milestones.
+- `PATCH /api/projects/{projectId}/milestones/{milestoneId}/complete` — Toggles milestone completion (`{"completed": true, "completedDate": "YYYY-MM-DD"}`); defaults `completedDate` to today in the user's `timeZone` when completing.
+- `POST /api/projects/{projectId}/worklogs`, `PUT /api/projects/{projectId}/worklogs/{worklogId}`, `DELETE /api/projects/{projectId}/worklogs/{worklogId}` — Creates, updates, and soft-deletes dated project work logs (returned newest-first; also surfaced in `GET /api/coding/day/{date}` and `GET /api/progress/monthly`).
+- `POST /api/projects/{projectId}/media/upload` (`multipart/form-data`: `file`, optional `caption`) — Uploads a screenshot (`PNG`, `JPG`, or `WebP`, max `2 MB`, max `6` per project). Validates extension, MIME type, size, and image magic bytes on the server, generates a random UUID filename, and stores outside the web root (`app.uploads.dir`).
+- `POST /api/projects/{projectId}/media/video` — Saves a validated `http://`/`https://` demo video link with optional caption.
+- `GET /api/projects/{projectId}/media/{mediaId}/file` — Serves the stored screenshot only to its authenticated owner with `X-Content-Type-Options: nosniff`.
+- `DELETE /api/projects/{projectId}/media/{mediaId}` — Deletes a screenshot (from DB and disk) or demo video link.
 
 
 

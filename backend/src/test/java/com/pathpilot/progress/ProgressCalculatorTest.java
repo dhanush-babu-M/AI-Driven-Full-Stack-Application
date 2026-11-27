@@ -62,8 +62,16 @@ class ProgressCalculatorTest {
     @Test
     void projectProgress_handlesEmptyAndMixedMilestones() {
         assertNull(ProgressCalculator.calculateProjectProgress(List.of()));
+        assertNull(ProgressCalculator.calculateProjectProgress(null));
+        assertNull(ProgressCalculator.calculateProjectProgress(List.of("RESCHEDULED")));
+        assertEquals(25.0, ProgressCalculator.calculateProjectProgress(
+                List.of("COMPLETED", "PLANNED", "PLANNED", "PLANNED")
+        ));
         assertEquals(75.0, ProgressCalculator.calculateProjectProgress(
                 List.of("COMPLETED", "COMPLETED", "COMPLETED", "PENDING")
+        ));
+        assertEquals(100.0, ProgressCalculator.calculateProjectProgress(
+                List.of("COMPLETED", "COMPLETED")
         ));
     }
 

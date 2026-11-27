@@ -57,10 +57,13 @@
 - [ ] **Phase 5A Test Gate**: Verify empty states + "Log your first practice", log 3 practice entries on different days and verify heatmap/streak/summary/drawer, sync a public GitHub username twice without duplicates, verify rate-limit handling, and confirm no LeetCode/CodingBat import claims
 
 ## Phase 6: Projects & Job Applications
-- [ ] Backend CRUD for `projects`, `project_milestones`, and `project_worklogs`
-- [ ] Milestone-based project progress in `ProgressCalculator`
-- [ ] Backend CRUD for `job_applications` and automatic `job_status_history` tracking
-- [ ] `/app/projects` page with `Projects` | `Job Applications` tabs (matching user wireframe)
+- [x] Backend CRUD for `projects`, `project_milestones`, `project_worklogs`, and `project_media` (`V8__projects_and_profile_settings.sql`, strict `CurrentUser.id()` filtering, status history in `record_history`, safe local screenshot upload outside web root) (2026-11-27)
+- [x] Milestone-based project progress in `ProgressCalculator` (returns `null` when zero milestones, feeds Project cards and Dashboard Project Progress card) (2026-11-27)
+- [x] Profile Links & Settings (`Portfolio`, `GitHub` username/URL, `LeetCode`, optional `LinkedIn` & `CodingBat` with `https://` validation, time zone dropdown, skills with Beginner/Working/Comfortable levels, target roles) + prominent 3 link pills on Dashboard & Projects page (2026-11-27)
+- [x] `/app/projects` page (Page 4A: stacked `My Projects` + `Job Applications` placeholder on desktop, tabs on mobile, responsive cards, detail drawer with Overview/Milestones/Work Log/Media, work logs synced to Coding day drawer & Monthly progress) (2026-11-27)
+- [ ] **Phase 5B / Page 4A Test Gate**: Run `mvn test` and `npm run build`, create `"PathPilot"` with 4 milestones and complete 1 -> 25% on card & Dashboard, verify zero-milestone empty state, cross-user 404 isolation, and valid external link behavior
+- [ ] Backend CRUD for `job_applications` and automatic `job_status_history` tracking (Prompt 10)
+- [ ] Full `Job Applications` table & job-description skill analysis on `/app/projects` (Prompt 10)
 
 ## Phase 7: Monthly Reports & Spring Scheduling
 - [ ] Backend `monthly_reports` generation using `ProgressCalculator` (`CALCULATED` badge)
