@@ -1,5 +1,6 @@
 package com.pathpilot.config;
 
+import com.pathpilot.ai.AiRateLimitFilter;
 import com.pathpilot.common.ApiErrorResponse;
 import com.pathpilot.security.AuthRateLimitFilter;
 import com.pathpilot.security.JwtAuthenticationFilter;
@@ -36,6 +37,7 @@ public class SecurityConfig {
     private final AppProperties appProperties;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthRateLimitFilter authRateLimitFilter;
+    private final AiRateLimitFilter aiRateLimitFilter;
     private final ObjectMapper objectMapper;
     private final Environment environment;
 
@@ -43,12 +45,14 @@ public class SecurityConfig {
             AppProperties appProperties,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             AuthRateLimitFilter authRateLimitFilter,
+            AiRateLimitFilter aiRateLimitFilter,
             ObjectMapper objectMapper,
             Environment environment
     ) {
         this.appProperties = appProperties;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authRateLimitFilter = authRateLimitFilter;
+        this.aiRateLimitFilter = aiRateLimitFilter;
         this.objectMapper = objectMapper;
         this.environment = environment;
     }
@@ -89,7 +93,8 @@ public class SecurityConfig {
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(aiRateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

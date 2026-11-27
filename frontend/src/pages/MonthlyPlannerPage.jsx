@@ -16,6 +16,7 @@ import {
   deleteGoal,
   fetchGoals,
   fetchMonthlyProgress,
+  generateMonthlyAiSummary,
   updateGoal,
 } from '../api/client';
 import Card from '../components/Card';
@@ -72,6 +73,12 @@ export default function MonthlyPlannerPage() {
   const [prevMonthly, setPrevMonthly] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ message: '', type: 'info' });
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
+
+  useEffect(() => {
+    setAiSummary(null);
+  }, [selectedMonth]);
 
   // Opening Question
   const [showOpeningQuestion, setShowOpeningQuestion] = useState(false);
@@ -649,8 +656,90 @@ export default function MonthlyPlannerPage() {
                   : `No tasks planned for ${selectedMonth} yet.`}
               </p>
 
-              <div className="rounded-xl border border-dashed border-border bg-canvas p-3 text-xs text-muted">
-                <span className="font-semibold text-ink">AI summary:</span> Disabled until Prompts 11 &amp; 12 connect the proposal-only backend assistant.
+              <div className="rounded-xl border border-border bg-canvas/60 p-3.5 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-ink">AI Monthly Narrative</span>
+                    {aiSummary && <SourceTag source={aiSummary.source || 'RULE'} />}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={aiSummaryLoading}
+                    onClick={async () => {
+                      setAiSummaryLoading(true);
+                      try {
+                        const res = await generateMonthlyAiSummary(selectedMonth, {
+                          refresh: Boolean(aiSummary),
+                        });
+                        setAiSummary(res);
+                      } catch (err) {
+                        setToast({
+                          message: err?.message || 'Unable to generate AI monthly summary.',
+                          type: 'error',
+                        });
+                      } finally {
+                        setAiSummaryLoading(false);
+                      }
+                    }}
+                    className="rounded-pill bg-primary px-3 py-1 text-[11px] font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+                  >
+                    {aiSummaryLoading
+                      ? 'Generating...'
+                      : aiSummary
+                      ? 'Regenerate'
+                      : 'Generate AI Summary'}
+                  </button>
+                </div>
+
+                {!aiSummary ? (
+                  <p className="text-xs text-muted">
+                    Summarises only your saved snapshot counts, hours, topics, milestones, and goals for {selectedMonth}.
+                  </p>
+                ) : (
+                  <div className="space-y-2 text-xs text-body">
+                    {aiSummary.notice && (
+                      <p className="rounded-lg border border-amber-300/70 bg-amber-50 px-2.5 py-1.5 text-[11px] text-amber-900">
+                        {aiSummary.notice}
+                      </p>
+                    )}
+                    {(aiSummary.summaryParagraphs || []).map((para, idx) => (
+                      <p key={idx} className="leading-relaxed">
+                        {para}
+                      </p>
+                    ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                      <div className="rounded-lg border border-border bg-surface p-2">
+                        <p className="font-bold text-completed mb-1">Went Well</p>
+                        <ul className="list-disc pl-3.5 space-y-0.5 text-[11px]">
+                          {(aiSummary.wentWell || []).map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="rounded-lg border border-border bg-surface p-2">
+                        <p className="font-bold text-ink mb-1">Unfinished</p>
+                        <ul className="list-disc pl-3.5 space-y-0.5 text-[11px]">
+                          {(aiSummary.unfinished || []).map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="rounded-lg border border-border bg-surface p-2">
+                        <p className="font-bold text-primary mb-1">Next Priorities</p>
+                        <ul className="list-disc pl-3.5 space-y-0.5 text-[11px]">
+                          {(aiSummary.nextMonthPriorities || []).map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted">
+                      {aiSummary.source === 'AI'
+                        ? aiSummary.disclaimer || 'AI-generated. Based on your saved records.'
+                        : 'Rule-based from your saved records.'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

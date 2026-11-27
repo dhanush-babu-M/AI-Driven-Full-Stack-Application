@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchDashboard } from '../api/client';
+import {
+  createAiTaskProposal,
+  fetchAiRecommendation,
+  fetchDashboard,
+} from '../api/client';
+import { notifyAiInboxChanged, openAiAgent, openAiInbox } from '../hooks/useAiInbox';
 import Card from '../components/Card';
 import CategoryChip from '../components/CategoryChip';
 import EmptyState from '../components/EmptyState';
@@ -188,6 +193,9 @@ export default function DashboardPage() {
   const clock = getTimeZoneClock(timeZone);
 
   const [dashboard, setDashboard] = useState(null);
+  const [aiRec, setAiRec] = useState(null);
+  const [aiRefreshing, setAiRefreshing] = useState(false);
+  const [proposingTask, setProposingTask] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [hideGithubCard, setHideGithubCard] = useState(false);
@@ -197,12 +205,52 @@ export default function DashboardPage() {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchDashboard(clock.isoDate);
+      const [data, recData] = await Promise.all([
+        fetchDashboard(clock.isoDate),
+        fetchAiRecommendation({ date: clock.isoDate }).catch(() => null),
+      ]);
       setDashboard(data);
+      if (recData) setAiRec(recData);
     } catch (err) {
       setError(err?.message || 'Unable to load dashboard progress.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshRecommendation = async () => {
+    setAiRefreshing(true);
+    try {
+      const recData = await fetchAiRecommendation({ date: clock.isoDate, refresh: true });
+      setAiRec(recData);
+    } catch (err) {
+      setToast({ message: err?.message || 'Unable to refresh suggestion.', type: 'error' });
+    } finally {
+      setAiRefreshing(false);
+    }
+  };
+
+  const handleProposeTask = async () => {
+    const draft = recommendation?.proposedTask;
+    if (!draft) return;
+    setProposingTask(true);
+    try {
+      await createAiTaskProposal({
+        title: draft.title,
+        description: draft.description,
+        category: draft.category || 'DSA_PRACTICE',
+        taskDate: draft.taskDate || clock.isoDate,
+        priority: draft.priority || 'MEDIUM',
+      });
+      notifyAiInboxChanged();
+      setToast({
+        message: 'Suggested task queued in Approval Inbox for your review.',
+        type: 'success',
+      });
+    } catch (err) {
+      setToast({ message: err?.message || 'Unable to queue task proposal.', type: 'error' });
+    } finally {
+      setProposingTask(false);
     }
   };
 
@@ -241,9 +289,10 @@ export default function DashboardPage() {
     dataSource: 'CALCULATED',
   };
 
-  const recommendation = dashboard?.recommendation || {
+  const recommendation = aiRec || dashboard?.recommendation || {
     text: 'No tasks planned for today yet. Add 2–3 focused tasks to build daily momentum.',
     source: 'RULE',
+    disclaimer: 'Rule-based from your saved records.',
     actionLabel: 'Plan today',
     actionPath: '/app/planner/daily',
   };
@@ -452,22 +501,74 @@ export default function DashboardPage() {
                   </span>
                   <h2 className="text-base font-semibold text-ink">AI Suggestion</h2>
                 </span>
-                <SourceTag source={recommendation.source} />
+                <div className="flex items-center gap-1.5">
+                  <SourceTag source={recommendation.source} />
+                  <button
+                    type="button"
+                    onClick={handleRefreshRecommendation}
+                    disabled={aiRefreshing}
+                    title="Refresh recommendation"
+                    className="rounded-lg px-1.5 py-0.5 text-[11px] font-semibold text-primary hover:bg-white/70 disabled:opacity-50"
+                  >
+                    {aiRefreshing ? '…' : '↻'}
+                  </button>
+                </div>
               </div>
 
-              <p className="mt-4 text-sm text-ink leading-relaxed">
+              {recommendation.notice && (
+                <p className="mt-3 rounded-lg border border-amber-300/70 bg-amber-50 px-2.5 py-1.5 text-[11px] text-amber-900">
+                  {recommendation.notice}
+                </p>
+              )}
+
+              <p className="mt-3 text-sm text-ink leading-relaxed">
                 {recommendation.text}
+              </p>
+
+              <p className="mt-2 text-[11px] text-muted">
+                {recommendation.source === 'AI'
+                  ? recommendation.disclaimer || 'AI-generated. Based on your saved records.'
+                  : 'Rule-based from your saved records.'}
               </p>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-primary/15">
-              <Link
-                to={recommendation.actionPath || '/app/planner/daily'}
-                className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover hover:underline"
-              >
-                <span>View Suggestion</span>
-                <span aria-hidden="true">→</span>
-              </Link>
+            <div className="mt-4 pt-3 border-t border-primary/15 space-y-2">
+              {recommendation.proposedTask && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleProposeTask}
+                    disabled={proposingTask}
+                    className="rounded-pill bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+                  >
+                    {proposingTask ? 'Adding...' : '+ Add as task'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openAiInbox}
+                    className="rounded-pill border border-primary/30 bg-surface px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-white"
+                  >
+                    Approval Inbox
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-2">
+                <Link
+                  to={recommendation.actionPath || '/app/planner/daily'}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover hover:underline"
+                >
+                  <span>{recommendation.actionLabel || 'View Suggestion'}</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={openAiAgent}
+                  className="text-xs font-semibold text-ink hover:text-primary hover:underline"
+                >
+                  Ask Agent
+                </button>
+              </div>
             </div>
           </Card>
 

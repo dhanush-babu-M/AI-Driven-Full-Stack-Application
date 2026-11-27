@@ -522,4 +522,69 @@ export function rescheduleFollowup(followupId, payload) {
   });
 }
 
+// AI Assistant & Approval Proposals
+export function fetchAiRecommendation({ date, refresh = false } = {}) {
+  const qs = new URLSearchParams();
+  if (date) qs.set('date', date);
+  if (refresh) qs.set('refresh', 'true');
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return apiFetch(`/api/ai/recommendation${suffix}`);
+}
+
+export function analyzeJobDescription(payload) {
+  return apiFetch('/api/ai/jd-analysis', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchSavedJdAnalysis(jobApplicationId) {
+  return apiFetch(`/api/ai/jd-analysis/${jobApplicationId}`);
+}
+
+export function generateMonthlyAiSummary(yearMonth, { refresh = false } = {}) {
+  const suffix = refresh ? '?refresh=true' : '';
+  return apiFetch(`/api/ai/monthly-summary/${encodeURIComponent(yearMonth)}${suffix}`, {
+    method: 'POST',
+  });
+}
+
+export function fetchAiProposals(status = 'PENDING') {
+  const suffix = status ? `?status=${encodeURIComponent(status)}` : '';
+  return apiFetch(`/api/ai/proposals${suffix}`);
+}
+
+export function createAiTaskProposal(payload) {
+  return apiFetch('/api/ai/proposals/task', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function createAiTaskProposalsBatch(tasks) {
+  return apiFetch('/api/ai/proposals/tasks/batch', {
+    method: 'POST',
+    body: JSON.stringify({ tasks }),
+  });
+}
+
+export function approveAiProposal(id) {
+  return apiFetch(`/api/ai/proposals/${id}/approve`, {
+    method: 'POST',
+  });
+}
+
+export function rejectAiProposal(id) {
+  return apiFetch(`/api/ai/proposals/${id}/reject`, {
+    method: 'POST',
+  });
+}
+
+export function sendAgentMessage(message) {
+  return apiFetch('/api/ai/agent', {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+}
+
 export { API_BASE_URL };

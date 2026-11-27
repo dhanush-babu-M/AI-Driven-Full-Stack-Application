@@ -72,10 +72,13 @@
 - [ ] `/app/reports/:yyyy-MM` page (matching user wireframe) with Recharts charts
 
 ## Phase 8: AI Career Assistant (Proposal-Only)
-- [ ] Java backend LLM client (API key stored only in server `.env`, never frontend)
-- [ ] Rate limiting on all AI endpoints
-- [ ] `ai_proposals` entity, service, and endpoints (AI can only PROPOSE; never mutates user records directly)
-- [ ] UI workflow to inspect, approve, or reject `AI`-badged proposals (with `record_history` audit trail)
+- [x] Documented LLM provider comparison & implemented swappable `LlmClient` interface + `GeminiLlmClient` (`gemini-3.5-flash-lite`, `LLM_API_KEY` read strictly server-side, timeout/backoff/quota handling) + `docs/ai.md` (2026-11-27)
+- [x] Sliding-window per-user rate limit on `/api/ai/**` (`AiRateLimitFilter`) + per-user response caching (`AiCacheService`) + strict schema/grounding retry & rule fallback (`AiStructuredExecutor`) (2026-11-27)
+- [x] Daily Recommendation (`RuleRecommendationEngine` + `GET /api/ai/recommendation`), Dashboard AI Suggestion card (`AI`/`RULE` `SourceTag`, disclaimer, `"Add as task"` -> Approval Inbox), and global TopBar Approval Inbox + Agent modal (2026-11-27)
+- [x] Job Description Analysis (`POST/GET /api/ai/jd-analysis`, `V10` persistence on `job_applications`, strict profile/project grounding, `"Analyse with AI"` tab in `JobDetailDrawer`, `"Turn checklist into tasks"` batch proposals) (2026-11-27)
+- [x] Monthly Summary AI (`POST /api/ai/monthly-summary/{yyyy-MM}`, `MonthlySummaryGrounder` numeric verification, `V10` persistence on `monthly_reports`, interactive summary panel in `MonthlyPlannerPage`) (2026-11-27)
+- [x] Bounded Agent Mode (`POST /api/ai/agent`, max 4 tool calls, `AgentToolRegistry` blocking `userId` arguments with `403`, `proposeTask` proposal-only) + unit/integration test suite mocking `LlmClient` (2026-11-27)
+- [ ] **Phase 7 (AI Layer) Test Gate**: Run `mvn test` and `npm run build`, test recommendation/JD analysis/monthly summary/agent with & without `LLM_API_KEY`, verify Approval Inbox creates real tasks only after approval, and review interview explanation of `"how the AI workflow works"`
 
 ## Phase 9: Settings, Testing, Security Audit & Polish
 - [ ] `/app/settings` page (profile, time zone, connected accounts, notification preferences)

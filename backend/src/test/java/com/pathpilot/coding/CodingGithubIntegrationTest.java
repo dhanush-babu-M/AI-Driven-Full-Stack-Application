@@ -1,5 +1,6 @@
 package com.pathpilot.coding;
 
+import com.pathpilot.ai.AiProposalRepository;
 import com.pathpilot.github.ConnectedAccount;
 import com.pathpilot.github.ConnectedAccountRepository;
 import com.pathpilot.github.GitHubClient;
@@ -100,6 +101,8 @@ class CodingGithubIntegrationTest {
     @MockitoBean private JobApplicationRepository jobApplicationRepository;
     @MockitoBean private JobFollowupRepository jobFollowupRepository;
     @MockitoBean private JobStatusHistoryRepository jobStatusHistoryRepository;
+    @MockitoBean private com.pathpilot.report.MonthlyReportRepository monthlyReportRepository;
+    @MockitoBean private AiProposalRepository aiProposalRepository;
     @MockitoBean private GitHubClient gitHubClient;
 
     private MockMvc mockMvc;

@@ -204,5 +204,22 @@ Manual entry only (no scraping or external site fetches).
 - `DELETE /api/jobs/{id}` — Soft-deletes the application and its pending follow-ups.
 - `GET /api/reminders/upcoming?hours=24` — Now also includes pending `FOLLOWUP` reminders due today or tomorrow (linking to `/app/projects?tab=applications&jobId=...`).
 
+---
+
+## AI Assistant & Proposal Inbox (`/api/ai/*` — All Require Auth & Rate-Limited per User)
+
+See [docs/ai.md](docs/ai.md) for the swappable `LlmClient` design, privacy rules, grounding validation, and tool-calling loop diagram.
+
+- `GET /api/ai/recommendation?date=&refresh=false` — Evaluates deterministic daily facts (`RuleRecommendationEngine`), optionally asks `LlmClient` (`gemini-3.5-flash-lite` via server-side `LLM_API_KEY`) for natural wording & task draft, caches per user/day, and falls back cleanly to `RULE` when unconfigured, rate-limited, or invalid JSON. Returns `source` (`"AI"` | `"RULE"`), `disclaimer`, optional `notice`, `facts`, and `proposedTask`.
+- `POST /api/ai/jd-analysis` — Accepts `{ jobApplicationId?, jobDescription? }`, strips HTML (`MAX_JD_CHARS = 8000`), compares strictly against Settings skills (respecting `Beginner`/`Working`/`Comfortable`) and the user's saved projects, falls back to `RuleJdAnalyzer` if needed, and persists JSON on `job_applications` (`V10`).
+- `GET /api/ai/jd-analysis/{jobApplicationId}` — Returns the persisted `JdAnalysisResponse` for an owned application (`404 JOB_NOT_FOUND` for other users).
+- `POST /api/ai/monthly-summary/{yyyy-MM}?refresh=false` — Summarizes saved monthly snapshot numbers, topics, milestones, and goals; `MonthlySummaryGrounder` rejects any LLM output citing numbers absent from the snapshot; caches per user/month and persists JSON on `monthly_reports`.
+- `GET /api/ai/proposals?status=PENDING` — Lists AI proposals (`ai_proposals`) owned by `CurrentUser.id()`.
+- `POST /api/ai/proposals/task` & `POST /api/ai/proposals/tasks/batch` — Creates `PENDING` task proposals (`ai_proposals`) without modifying real tasks or logs.
+- `POST /api/ai/proposals/{id}/approve` — Approves an owned `PENDING` proposal: creates the real `Task` (`data_source = "AI"`), updates/creates `daily_logs`, and writes `record_history` (`CREATE` / `"Approved AI task proposal"`).
+- `POST /api/ai/proposals/{id}/reject` — Marks an owned `PENDING` proposal `REJECTED`.
+- `POST /api/ai/agent` — Runs the bounded tool-calling loop (`MAX_TOOL_CALLS = 4`) across `getRecordedActivity`, `calculateProgress`, `findOverdueTasks`, `analyzeJobDescription`, and `proposeTask` (proposal-only). Forbids passing `userId`/`user_id` in tool args (`403 FORBIDDEN_TOOL_ARGUMENT`).
+
+
 
 

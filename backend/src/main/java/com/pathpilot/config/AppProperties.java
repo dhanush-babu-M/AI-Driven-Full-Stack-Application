@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.List;
 
 /**
- * Single configuration source for application identity, CORS, JWT, rate-limit, GitHub, and upload settings.
+ * Single configuration source for application identity, CORS, JWT, rate-limit, GitHub, uploads, and AI settings.
  */
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(
@@ -15,7 +15,8 @@ public record AppProperties(
         JwtProperties jwt,
         RateLimitProperties rateLimit,
         GithubProperties github,
-        UploadsProperties uploads
+        UploadsProperties uploads,
+        AiProperties ai
 ) {
     public AppProperties {
         if (github == null) {
@@ -23,6 +24,18 @@ public record AppProperties(
         }
         if (uploads == null) {
             uploads = new UploadsProperties("./uploads", 2L * 1024 * 1024);
+        }
+        if (ai == null) {
+            ai = new AiProperties(
+                    "gemini",
+                    "",
+                    "gemini-3.5-flash-lite",
+                    "https://generativelanguage.googleapis.com/v1beta",
+                    15000,
+                    2,
+                    10,
+                    60
+            );
         }
     }
 
@@ -97,6 +110,44 @@ public record AppProperties(
             }
             if (maxFileSizeBytes <= 0) {
                 maxFileSizeBytes = 2L * 1024 * 1024;
+            }
+        }
+    }
+
+    public record AiProperties(
+            String provider,
+            String apiKey,
+            String model,
+            String baseUrl,
+            int timeoutMs,
+            int maxRetries,
+            int rateLimitMax,
+            long rateLimitWindowSeconds
+    ) {
+        public AiProperties {
+            if (provider == null || provider.isBlank()) {
+                provider = "gemini";
+            }
+            if (apiKey == null) {
+                apiKey = "";
+            }
+            if (model == null || model.isBlank()) {
+                model = "gemini-3.5-flash-lite";
+            }
+            if (baseUrl == null || baseUrl.isBlank()) {
+                baseUrl = "https://generativelanguage.googleapis.com/v1beta";
+            }
+            if (timeoutMs <= 0) {
+                timeoutMs = 15000;
+            }
+            if (maxRetries < 0) {
+                maxRetries = 2;
+            }
+            if (rateLimitMax <= 0) {
+                rateLimitMax = 10;
+            }
+            if (rateLimitWindowSeconds <= 0) {
+                rateLimitWindowSeconds = 60;
             }
         }
     }

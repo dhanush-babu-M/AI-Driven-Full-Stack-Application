@@ -62,6 +62,12 @@ public class JobApplication {
     @Column(name = "prep_checklist_json", columnDefinition = "TEXT")
     private String prepChecklistJson;
 
+    @Column(name = "ai_jd_analysis_json", columnDefinition = "TEXT")
+    private String aiJdAnalysisJson;
+
+    @Column(name = "ai_jd_analyzed_at_utc")
+    private Instant aiJdAnalyzedAtUtc;
+
     @Column(name = "data_source", nullable = false, length = 20)
     private String dataSource = "MANUAL";
 
@@ -116,6 +122,10 @@ public class JobApplication {
     public void setInterviewDate(LocalDate interviewDate) { this.interviewDate = interviewDate; }
     public String getPrepChecklistJson() { return prepChecklistJson; }
     public void setPrepChecklistJson(String prepChecklistJson) { this.prepChecklistJson = prepChecklistJson; }
+    public String getAiJdAnalysisJson() { return aiJdAnalysisJson; }
+    public void setAiJdAnalysisJson(String aiJdAnalysisJson) { this.aiJdAnalysisJson = aiJdAnalysisJson; }
+    public Instant getAiJdAnalyzedAtUtc() { return aiJdAnalyzedAtUtc; }
+    public void setAiJdAnalyzedAtUtc(Instant aiJdAnalyzedAtUtc) { this.aiJdAnalyzedAtUtc = aiJdAnalyzedAtUtc; }
     public String getDataSource() { return dataSource; }
     public void setDataSource(String dataSource) { this.dataSource = dataSource; }
     public Instant getCreatedAtUtc() { return createdAtUtc; }

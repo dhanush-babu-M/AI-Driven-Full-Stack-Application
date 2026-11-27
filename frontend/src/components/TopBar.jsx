@@ -19,6 +19,9 @@ export default function TopBar({
   upcomingReminders = [],
   unreadCount = 0,
   onMarkAllRead,
+  pendingProposalCount = 0,
+  onOpenAiInbox,
+  onOpenAiAgent,
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -91,8 +94,35 @@ export default function TopBar({
         </div>
       </div>
 
-      {/* Right: Notification bell + User chip dropdown */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      {/* Right: AI Assistant + Approval Inbox + Notification bell + User chip dropdown */}
+      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        {onOpenAiAgent && (
+          <button
+            type="button"
+            onClick={onOpenAiAgent}
+            className="hidden sm:inline-flex items-center gap-1 rounded-pill border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-primary-soft hover:text-primary transition-colors duration-fast"
+          >
+            <span aria-hidden="true">✨</span>
+            <span>Ask AI</span>
+          </button>
+        )}
+
+        {onOpenAiInbox && (
+          <button
+            type="button"
+            onClick={onOpenAiInbox}
+            aria-label={`AI Approval Inbox${pendingProposalCount > 0 ? ` (${pendingProposalCount} pending)` : ''}`}
+            className="relative inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-canvas transition-colors duration-fast"
+          >
+            <span>Inbox</span>
+            {pendingProposalCount > 0 && (
+              <span className="inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+                {pendingProposalCount}
+              </span>
+            )}
+          </button>
+        )}
+
         {/* Bell icon with unread dot & count */}
         <div className="relative" ref={notifRef}>
           <button

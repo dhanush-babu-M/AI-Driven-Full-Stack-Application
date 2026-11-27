@@ -78,7 +78,8 @@ class ProjectServiceTest {
                 new AppProperties.JwtProperties("secret-at-least-32-chars-for-tests-only", 30, "pathpilot_token", false, "Lax"),
                 new AppProperties.RateLimitProperties(5, 60),
                 new AppProperties.GithubProperties("https://api.github.com", 5000, 10000, null),
-                new AppProperties.UploadsProperties(tempDir.toString(), 2L * 1024 * 1024)
+                new AppProperties.UploadsProperties(tempDir.toString(), 2L * 1024 * 1024),
+                null
         );
         ProjectMediaStorageService storageService = new ProjectMediaStorageService(props);
 

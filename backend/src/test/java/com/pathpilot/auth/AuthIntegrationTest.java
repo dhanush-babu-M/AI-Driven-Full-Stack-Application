@@ -1,5 +1,6 @@
 package com.pathpilot.auth;
 
+import com.pathpilot.ai.AiProposalRepository;
 import com.pathpilot.coding.CodingActivityRepository;
 import com.pathpilot.github.ConnectedAccountRepository;
 import com.pathpilot.github.GithubEventRepository;
@@ -17,6 +18,7 @@ import com.pathpilot.project.ProjectMediaRepository;
 import com.pathpilot.project.ProjectMilestoneRepository;
 import com.pathpilot.project.ProjectRepository;
 import com.pathpilot.project.ProjectWorklogRepository;
+import com.pathpilot.report.MonthlyReportRepository;
 import com.pathpilot.security.AuthRateLimitFilter;
 import com.pathpilot.user.User;
 import com.pathpilot.user.UserProfile;
@@ -130,6 +132,12 @@ class AuthIntegrationTest {
 
     @MockitoBean
     private JobStatusHistoryRepository jobStatusHistoryRepository;
+
+    @MockitoBean
+    private AiProposalRepository aiProposalRepository;
+
+    @MockitoBean
+    private MonthlyReportRepository monthlyReportRepository;
 
     private MockMvc mockMvc;
     private Map<Long, User> usersById;

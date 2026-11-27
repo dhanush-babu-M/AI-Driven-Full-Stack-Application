@@ -92,6 +92,8 @@ class JobIntegrationTest {
     @MockitoBean private JobApplicationRepository jobApplicationRepository;
     @MockitoBean private JobFollowupRepository jobFollowupRepository;
     @MockitoBean private JobStatusHistoryRepository jobStatusHistoryRepository;
+    @MockitoBean private com.pathpilot.ai.AiProposalRepository aiProposalRepository;
+    @MockitoBean private com.pathpilot.report.MonthlyReportRepository monthlyReportRepository;
 
     private MockMvc mockMvc;
     private final Map<Long, User> users = new ConcurrentHashMap<>();

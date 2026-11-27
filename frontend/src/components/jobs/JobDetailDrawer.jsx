@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import {
+  analyzeJobDescription,
+  createAiTaskProposalsBatch,
   deleteJob,
+  fetchSavedJdAnalysis,
   updateJobChecklist,
   updateJobStatus,
 } from '../../api/client';
+import { notifyAiInboxChanged, openAiInbox } from '../../hooks/useAiInbox';
 import { notifyRemindersChanged } from '../../hooks/useReminders';
 import { isValidHttpUrl } from '../../utils/urlValidation';
 import SourceTag from '../SourceTag';
@@ -18,6 +22,15 @@ const TABS = [
   { key: 'details', label: 'Details' },
   { key: 'timeline', label: 'Timeline' },
   { key: 'notes', label: 'Notes' },
+  { key: 'ai', label: 'AI Analysis' },
+];
+
+const QUESTION_GROUPS = [
+  { key: 'java', label: 'Java' },
+  { key: 'springBoot', label: 'Spring Boot' },
+  { key: 'sql', label: 'SQL' },
+  { key: 'react', label: 'React' },
+  { key: 'behavioural', label: 'Behavioural' },
 ];
 
 const QUICK_PREP_TEMPLATES = [
@@ -68,11 +81,28 @@ export default function JobDetailDrawer({
   const [editingItemText, setEditingItemText] = useState('');
   const [savingChecklist, setSavingChecklist] = useState(false);
 
+  // AI JD analysis
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [customJdText, setCustomJdText] = useState('');
+  const [queueingBatch, setQueueingBatch] = useState(false);
+
   useEffect(() => {
     if (job) {
       setNextStatus(job.status || 'APPLIED');
       setStatusNote('');
       setConfirmDelete(false);
+      setCustomJdText(job.jobDescription || '');
+      setAiError('');
+      setAiAnalysis(null);
+      if (job.id) {
+        fetchSavedJdAnalysis(job.id)
+          .then((saved) => {
+            if (saved) setAiAnalysis(saved);
+          })
+          .catch(() => {});
+      }
     }
   }, [job?.id, job?.status]);
 
@@ -174,6 +204,50 @@ export default function JobDetailDrawer({
     await saveChecklist(next);
   };
 
+  const handleAnalyseWithAi = async () => {
+    if (!job?.id) return;
+    setActiveTab('ai');
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const text = (customJdText || job.jobDescription || '').trim();
+      const res = await analyzeJobDescription({
+        jobApplicationId: job.id,
+        jobDescription: text || undefined,
+      });
+      setAiAnalysis(res);
+      onToast?.('Job description analysed (suggestions labelled below).', 'success');
+    } catch (err) {
+      setAiError(err?.message || 'Unable to analyse job description.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleTurnChecklistIntoTasks = async () => {
+    const items = aiAnalysis?.preparationChecklist || [];
+    if (items.length === 0) return;
+    setQueueingBatch(true);
+    try {
+      const todayIso = new Date().toISOString().slice(0, 10);
+      await createAiTaskProposalsBatch(
+        items.slice(0, 8).map((step) => ({
+          title: step,
+          description: `Interview prep suggested for ${job.companyName} — ${job.roleTitle}`,
+          category: 'JOB_APPLICATIONS',
+          taskDate: todayIso,
+          priority: 'MEDIUM',
+        }))
+      );
+      notifyAiInboxChanged();
+      onToast?.(`${Math.min(items.length, 8)} prep tasks sent to Approval Inbox.`, 'success');
+    } catch (err) {
+      onToast?.(err?.message || 'Unable to queue prep tasks.', 'error');
+    } finally {
+      setQueueingBatch(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex justify-end bg-ink/40 backdrop-blur-[1px]"
@@ -242,13 +316,12 @@ export default function JobDetailDrawer({
 
             <button
               type="button"
-              disabled
-              title="Coming in the AI step"
-              aria-disabled="true"
-              className="mb-1.5 inline-flex items-center gap-1.5 rounded-pill border border-border bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400 cursor-not-allowed"
+              onClick={handleAnalyseWithAi}
+              disabled={aiLoading}
+              className="mb-1.5 inline-flex items-center gap-1.5 rounded-pill bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
             >
               <span aria-hidden="true">✨</span>
-              <span>Analyse with AI</span>
+              <span>{aiLoading ? 'Analysing...' : 'Analyse with AI'}</span>
             </button>
           </div>
         )}
@@ -593,6 +666,206 @@ export default function JobDetailDrawer({
                       {job.notes || 'No personal notes recorded.'}
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* AI ANALYSIS TAB */}
+              {activeTab === 'ai' && (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-border bg-canvas/50 p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <label htmlFor="jd-paste-input" className="text-xs font-bold uppercase tracking-wider text-muted">
+                        Job Description (plain text, sanitized on server)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAnalyseWithAi}
+                        disabled={aiLoading}
+                        className="rounded-pill bg-primary px-3.5 py-1 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+                      >
+                        {aiLoading ? 'Analysing...' : aiAnalysis ? 'Re-run Analysis' : 'Run Analysis'}
+                      </button>
+                    </div>
+                    <textarea
+                      id="jd-paste-input"
+                      rows={4}
+                      value={customJdText}
+                      onChange={(e) => setCustomJdText(e.target.value)}
+                      maxLength={12000}
+                      placeholder="Paste the job description here to compare against your Settings skills and your saved projects..."
+                      className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-ink focus:outline-none focus:border-primary"
+                    />
+                  </div>
+
+                  {aiError && (
+                    <div className="rounded-xl border border-skipped/30 bg-skipped-soft p-3 text-xs font-medium text-skipped">
+                      {aiError}
+                    </div>
+                  )}
+
+                  {!aiAnalysis && !aiLoading ? (
+                    <div className="rounded-xl border border-dashed border-border bg-canvas/40 p-6 text-center space-y-2">
+                      <p className="text-sm font-semibold text-ink">No saved AI analysis yet</p>
+                      <p className="text-xs text-muted">
+                        Click &ldquo;Analyse with AI&rdquo; to compare the JD against your Settings skills and saved projects.
+                      </p>
+                    </div>
+                  ) : aiAnalysis && (
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <SourceTag source={aiAnalysis.source || 'RULE'} />
+                          <span className="text-[11px] text-muted">
+                            {aiAnalysis.disclaimer || 'AI-generated. Based on your saved records.'}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-muted">
+                          Suggestions only · Verified against Settings &amp; Projects
+                        </span>
+                      </div>
+
+                      {aiAnalysis.notice && (
+                        <p className="rounded-xl border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                          {aiAnalysis.notice}
+                        </p>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-border bg-canvas/50 p-3 space-y-1.5">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-muted">Required Skills</h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(aiAnalysis.requiredSkills || []).length === 0 ? (
+                              <span className="text-xs text-muted">None extracted</span>
+                            ) : (
+                              aiAnalysis.requiredSkills.map((s) => (
+                                <span key={s} className="rounded-pill bg-surface border border-border px-2.5 py-0.5 text-xs font-medium text-ink">
+                                  {s}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-border bg-canvas/50 p-3 space-y-1.5">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-muted">Nice to Have</h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(aiAnalysis.niceToHave || []).length === 0 ? (
+                              <span className="text-xs text-muted">None listed</span>
+                            ) : (
+                              aiAnalysis.niceToHave.map((s) => (
+                                <span key={s} className="rounded-pill bg-surface border border-border px-2.5 py-0.5 text-xs text-body">
+                                  {s}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-completed/30 bg-completed-soft/50 p-3 space-y-1.5">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-completed">Matched (Profile)</h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(aiAnalysis.matchedSkills || []).length === 0 ? (
+                              <span className="text-xs text-muted">No matching skills in Settings yet</span>
+                            ) : (
+                              aiAnalysis.matchedSkills.map((s) => (
+                                <span key={s} className="rounded-pill bg-surface border border-completed/30 px-2.5 py-0.5 text-xs font-semibold text-completed">
+                                  {s}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-amber-300/60 bg-amber-50/70 p-3 space-y-1.5">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-amber-800">Weak Areas (Beginner) &amp; Gaps</h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(aiAnalysis.weakAreas || []).map((s) => (
+                              <span key={`weak-${s}`} className="rounded-pill bg-surface border border-amber-300 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+                                Beginner: {s}
+                              </span>
+                            ))}
+                            {(aiAnalysis.gaps || []).map((s) => (
+                              <span key={`gap-${s}`} className="rounded-pill bg-surface border border-border px-2.5 py-0.5 text-xs font-medium text-ink">
+                                Gap: {s}
+                              </span>
+                            ))}
+                            {(aiAnalysis.weakAreas || []).length === 0 && (aiAnalysis.gaps || []).length === 0 && (
+                              <span className="text-xs text-muted">No gaps detected</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-border bg-canvas/50 p-3.5 space-y-1.5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
+                          Recommended Projects to Highlight (Your Projects)
+                        </h4>
+                        {(aiAnalysis.recommendedProjectsToShow || []).length === 0 ? (
+                          <p className="text-xs text-muted">Add projects in My Projects to receive project suggestions.</p>
+                        ) : (
+                          <ul className="list-disc pl-4 space-y-1 text-xs text-body">
+                            {aiAnalysis.recommendedProjectsToShow.map((p) => (
+                              <li key={p}>{p}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                      <div className="rounded-xl border border-border bg-canvas/50 p-3.5 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
+                            Suggested Preparation Checklist
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            {(aiAnalysis.preparationChecklist || []).length > 0 && (
+                              <button
+                                type="button"
+                                onClick={handleTurnChecklistIntoTasks}
+                                disabled={queueingBatch}
+                                className="rounded-pill bg-primary px-3 py-1 text-[11px] font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+                              >
+                                {queueingBatch ? 'Queueing...' : 'Turn checklist into tasks'}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={openAiInbox}
+                              className="rounded-pill border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink hover:bg-canvas"
+                            >
+                              Approval Inbox
+                            </button>
+                          </div>
+                        </div>
+                        <ul className="list-disc pl-4 space-y-1 text-xs text-body">
+                          {(aiAnalysis.preparationChecklist || []).map((step) => (
+                            <li key={step}>{step}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {aiAnalysis.interviewQuestions && (
+                        <div className="rounded-xl border border-border bg-canvas/50 p-3.5 space-y-2.5">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
+                            Suggested Interview Questions
+                          </h4>
+                          {QUESTION_GROUPS.map((group) => {
+                            const qs = aiAnalysis.interviewQuestions[group.key] || [];
+                            if (qs.length === 0) return null;
+                            return (
+                              <div key={group.key} className="space-y-1">
+                                <p className="text-xs font-semibold text-ink">{group.label}</p>
+                                <ul className="list-disc pl-4 space-y-0.5 text-xs text-body">
+                                  {qs.map((q) => (
+                                    <li key={q}>{q}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </>
