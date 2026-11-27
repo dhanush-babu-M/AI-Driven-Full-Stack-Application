@@ -60,7 +60,8 @@ class GitHubServiceTest {
                 new AppProperties.CorsProperties(List.of("http://localhost:5173")),
                 new AppProperties.JwtProperties("test-jwt-secret-must-be-at-least-32-chars", 30, "pathpilot_token", false, "Lax"),
                 new AppProperties.RateLimitProperties(5, 60),
-                new AppProperties.GithubProperties("https://api.github.com", 2000, 3000, "test-aes-encryption-secret-key-32b")
+                new AppProperties.GithubProperties("https://api.github.com", 2000, 3000, "test-aes-encryption-secret-key-32b"),
+                null
         );
         tokenEncryptionService = new TokenEncryptionService(props);
         gitHubService = new GitHubService(

@@ -59,6 +59,7 @@ class AuthServiceTest {
                         "Lax"
                 ),
                 new AppProperties.RateLimitProperties(5, 60),
+                null,
                 null
         );
         JwtService jwtService = new JwtService(props, JsonMapper.builder().build());
