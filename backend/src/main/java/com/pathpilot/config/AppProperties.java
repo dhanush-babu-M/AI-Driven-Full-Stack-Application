@@ -26,6 +26,17 @@ public record AppProperties(
         }
     }
 
+    public AppProperties(
+            String name,
+            String tagline,
+            CorsProperties cors,
+            JwtProperties jwt,
+            RateLimitProperties rateLimit,
+            GithubProperties github
+    ) {
+        this(name, tagline, cors, jwt, rateLimit, github, null);
+    }
+
     public record CorsProperties(List<String> allowedOrigins) {
         public CorsProperties {
             if (allowedOrigins == null || allowedOrigins.isEmpty()) {

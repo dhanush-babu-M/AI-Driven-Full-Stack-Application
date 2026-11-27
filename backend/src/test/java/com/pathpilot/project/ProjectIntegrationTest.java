@@ -153,13 +153,13 @@ class ProjectIntegrationTest {
                     .toList();
         });
 
-        when(milestoneRepository.save(any(ProjectMilestone.class))).thenAnswer(inv -> {
+        when(projectMilestoneRepository.save(any(ProjectMilestone.class))).thenAnswer(inv -> {
             ProjectMilestone m = inv.getArgument(0);
             if (m.getId() == null) m.setId(seq.getAndIncrement());
             milestones.put(m.getId(), m);
             return m;
         });
-        when(milestoneRepository.findAllByUserIdAndProjectIdAndDeletedAtUtcIsNullOrderBySortOrderAscIdAsc(anyLong(), anyLong()))
+        when(projectMilestoneRepository.findAllByUserIdAndProjectIdAndDeletedAtUtcIsNullOrderBySortOrderAscIdAsc(anyLong(), anyLong()))
                 .thenAnswer(inv -> {
                     Long uid = inv.getArgument(0);
                     Long pid = inv.getArgument(1);
@@ -167,7 +167,7 @@ class ProjectIntegrationTest {
                             .filter(m -> m.getUserId().equals(uid) && m.getProjectId().equals(pid) && m.getDeletedAtUtc() == null)
                             .toList();
                 });
-        when(milestoneRepository.findByIdAndUserIdAndProjectIdAndDeletedAtUtcIsNull(anyLong(), anyLong(), anyLong()))
+        when(projectMilestoneRepository.findByIdAndUserIdAndProjectIdAndDeletedAtUtcIsNull(anyLong(), anyLong(), anyLong()))
                 .thenAnswer(inv -> {
                     Long id = inv.getArgument(0);
                     Long uid = inv.getArgument(1);
@@ -179,13 +179,13 @@ class ProjectIntegrationTest {
                     return Optional.of(m);
                 });
 
-        when(worklogRepository.save(any(ProjectWorklog.class))).thenAnswer(inv -> {
+        when(projectWorklogRepository.save(any(ProjectWorklog.class))).thenAnswer(inv -> {
             ProjectWorklog w = inv.getArgument(0);
             if (w.getId() == null) w.setId(seq.getAndIncrement());
             worklogs.put(w.getId(), w);
             return w;
         });
-        when(worklogRepository.findAllByUserIdAndProjectIdAndDeletedAtUtcIsNullOrderByWorkDateDescIdDesc(anyLong(), anyLong()))
+        when(projectWorklogRepository.findAllByUserIdAndProjectIdAndDeletedAtUtcIsNullOrderByWorkDateDescIdDesc(anyLong(), anyLong()))
                 .thenAnswer(inv -> {
                     Long uid = inv.getArgument(0);
                     Long pid = inv.getArgument(1);
@@ -193,7 +193,7 @@ class ProjectIntegrationTest {
                             .filter(w -> w.getUserId().equals(uid) && w.getProjectId().equals(pid) && w.getDeletedAtUtc() == null)
                             .toList();
                 });
-        when(worklogRepository.findAllByUserIdAndWorkDateAndDeletedAtUtcIsNullOrderByCreatedAtUtcDescIdDesc(anyLong(), any(LocalDate.class)))
+        when(projectWorklogRepository.findAllByUserIdAndWorkDateAndDeletedAtUtcIsNullOrderByCreatedAtUtcDescIdDesc(anyLong(), any(LocalDate.class)))
                 .thenAnswer(inv -> {
                     Long uid = inv.getArgument(0);
                     LocalDate d = inv.getArgument(1);
@@ -201,7 +201,7 @@ class ProjectIntegrationTest {
                             .filter(w -> w.getUserId().equals(uid) && w.getWorkDate().equals(d) && w.getDeletedAtUtc() == null)
                             .toList();
                 });
-        when(worklogRepository.findAllByUserIdAndDeletedAtUtcIsNullAndWorkDateBetweenOrderByWorkDateDescIdDesc(
+        when(projectWorklogRepository.findAllByUserIdAndDeletedAtUtcIsNullAndWorkDateBetweenOrderByWorkDateDescIdDesc(
                 anyLong(), any(LocalDate.class), any(LocalDate.class)))
                 .thenAnswer(inv -> {
                     Long uid = inv.getArgument(0);
