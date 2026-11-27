@@ -9,6 +9,8 @@ import com.pathpilot.github.GitHubClient.ParsedGitHubEvent;
 import com.pathpilot.github.GithubEvent;
 import com.pathpilot.github.GithubEventRepository;
 import com.pathpilot.job.JobApplicationRepository;
+import com.pathpilot.job.JobFollowupRepository;
+import com.pathpilot.job.JobStatusHistoryRepository;
 import com.pathpilot.planner.DailyLogRepository;
 import com.pathpilot.planner.GoalRepository;
 import com.pathpilot.planner.LearningRecord;
@@ -96,6 +98,8 @@ class CodingGithubIntegrationTest {
     @MockitoBean private ProjectWorklogRepository projectWorklogRepository;
     @MockitoBean private ProjectMediaRepository projectMediaRepository;
     @MockitoBean private JobApplicationRepository jobApplicationRepository;
+    @MockitoBean private JobFollowupRepository jobFollowupRepository;
+    @MockitoBean private JobStatusHistoryRepository jobStatusHistoryRepository;
     @MockitoBean private GitHubClient gitHubClient;
 
     private MockMvc mockMvc;

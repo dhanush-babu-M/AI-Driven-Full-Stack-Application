@@ -41,7 +41,11 @@ public final class ReminderDtos {
             LocalTime endTime,
             Instant reminderAtUtc,
             String status,
-            boolean inQuietHours
+            boolean inQuietHours,
+            String itemType,
+            Long followupId,
+            Long jobApplicationId,
+            String linkPath
     ) {
     }
 }

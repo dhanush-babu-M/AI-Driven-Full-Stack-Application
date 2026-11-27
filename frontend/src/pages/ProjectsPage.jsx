@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   createProject,
   fetchProfileLinks,
@@ -12,15 +12,20 @@ import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
 import ProfileQuickLinkPills from '../components/ProfileQuickLinkPills';
 import Toast from '../components/Toast';
+import JobApplicationsSection from '../components/jobs/JobApplicationsSection';
 import ProjectCard from '../components/projects/ProjectCard';
 import ProjectDetailDrawer from '../components/projects/ProjectDetailDrawer';
 import ProjectFormModal from '../components/projects/ProjectFormModal';
 
 export default function ProjectsPage() {
   const { projectId: routeProjectId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const [mobileTab, setMobileTab] = useState('projects'); // 'projects' | 'applications'
+  const initialTab = searchParams.get('tab') === 'applications' ? 'applications' : 'projects';
+  const initialJobId = searchParams.get('jobId');
+
+  const [mobileTab, setMobileTab] = useState(initialTab); // 'projects' | 'applications'
   const [projects, setProjects] = useState([]);
   const [profileLinks, setProfileLinks] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,6 +85,12 @@ export default function ProjectsPage() {
       loadDetail(routeProjectId);
     }
   }, [routeProjectId, loadDetail]);
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'applications' || searchParams.get('jobId')) {
+      setMobileTab('applications');
+    }
+  }, [searchParams]);
 
   const openProjectDrawer = async (id, tab = 'overview') => {
     setDrawerTab(tab);
@@ -245,43 +256,22 @@ export default function ProjectsPage() {
         )}
       </section>
 
-      {/* SECTION 2: JOB APPLICATIONS PLACEHOLDER (Stacked on desktop, tab on mobile) */}
+      {/* SECTION 2: JOB APPLICATIONS (Stacked on desktop, tab on mobile) */}
       <section
         aria-labelledby="job-apps-heading"
         className={mobileTab === 'applications' ? 'block space-y-4' : 'hidden md:block space-y-4'}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h2 id="job-apps-heading" className="text-lg font-bold text-ink">
-              Job Applications
-            </h2>
-            <p className="text-xs text-muted">
-              Application tracking table and job-description skill matching arrive in the next step.
-            </p>
-          </div>
-        </div>
-
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-muted border-collapse">
-              <thead>
-                <tr className="border-b border-border text-[11px] uppercase tracking-wider">
-                  <th className="py-2.5 pr-4 font-semibold">Company</th>
-                  <th className="py-2.5 pr-4 font-semibold">Role</th>
-                  <th className="py-2.5 pr-4 font-semibold">Status</th>
-                  <th className="py-2.5 pr-4 font-semibold">Applied Date</th>
-                  <th className="py-2.5 font-semibold">Location</th>
-                </tr>
-              </thead>
-            </table>
-          </div>
-          <div className="mt-4">
-            <EmptyState
-              title="Job Applications table coming in Prompt 10"
-              description="You will be able to log applications, track status history, and compare job descriptions against your Settings skills here."
-            />
-          </div>
-        </Card>
+        <JobApplicationsSection
+          initialJobId={initialJobId}
+          onClearInitialJobId={() => {
+            if (searchParams.has('jobId')) {
+              const next = new URLSearchParams(searchParams);
+              next.delete('jobId');
+              setSearchParams(next, { replace: true });
+            }
+          }}
+          onToast={showToast}
+        />
       </section>
 
       {/* Add / Edit Project Modal */}

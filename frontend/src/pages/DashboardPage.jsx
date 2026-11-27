@@ -8,6 +8,9 @@ import ProfileQuickLinkPills from '../components/ProfileQuickLinkPills';
 import ProgressBar from '../components/ProgressBar';
 import SourceTag from '../components/SourceTag';
 import StatTile from '../components/StatTile';
+import Toast from '../components/Toast';
+import UpcomingFollowupsCard from '../components/jobs/UpcomingFollowupsCard';
+import { JobStatusChip } from '../components/jobs/jobMeta';
 import { useAuth } from '../context/AuthContext';
 
 const DAILY_FORMULA_TEXT =
@@ -188,6 +191,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [hideGithubCard, setHideGithubCard] = useState(false);
+  const [toast, setToast] = useState({ message: '', type: 'info' });
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -740,7 +744,7 @@ export default function DashboardPage() {
                 Recent Job Applications
               </h2>
               <Link
-                to="/app/projects"
+                to="/app/projects?tab=applications"
                 className="text-xs font-semibold text-primary hover:underline"
               >
                 View all
@@ -754,7 +758,7 @@ export default function DashboardPage() {
                   description="Track your job applications and status updates in one place."
                   action={
                     <Link
-                      to="/app/projects"
+                      to="/app/projects?tab=applications"
                       className="inline-flex items-center rounded-pill bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover"
                     >
                       Track applications
@@ -765,21 +769,21 @@ export default function DashboardPage() {
             ) : (
               <ul className="mt-4 space-y-2.5 flex-1">
                 {recentApplications.map((app) => (
-                  <li
-                    key={app.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-canvas/60 px-3 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-ink truncate">
-                        {app.roleTitle}
-                      </p>
-                      <p className="text-xs text-muted truncate">
-                        {app.companyName} · {app.appliedDate}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-pill bg-primary-soft px-2.5 py-1 text-[11px] font-semibold text-primary">
-                      {app.status}
-                    </span>
+                  <li key={app.id}>
+                    <Link
+                      to={`/app/projects?tab=applications&jobId=${app.id}`}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-canvas/60 px-3 py-2.5 hover:border-primary/30 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-ink truncate">
+                          {app.roleTitle}
+                        </p>
+                        <p className="text-xs text-muted truncate">
+                          {app.companyName} · {app.appliedDate}
+                        </p>
+                      </div>
+                      <JobStatusChip status={app.status} />
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -826,8 +830,24 @@ export default function DashboardPage() {
               )}
             </div>
           </Card>
+
+          {/* ROW 4: Upcoming Job Follow-ups */}
+          <div className="md:col-span-2 xl:col-span-12">
+            <UpcomingFollowupsCard
+              followups={dashboard?.upcomingFollowups || []}
+              onUpdated={loadDashboard}
+              onToast={(message, type = 'info') => setToast({ message, type })}
+              showViewAllLink
+            />
+          </div>
         </div>
       )}
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onDismiss={() => setToast({ message: '', type: 'info' })}
+      />
     </div>
   );
 }

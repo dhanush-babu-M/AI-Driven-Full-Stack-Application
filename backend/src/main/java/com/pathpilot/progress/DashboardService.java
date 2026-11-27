@@ -7,6 +7,10 @@ import com.pathpilot.github.GithubEvent;
 import com.pathpilot.github.GithubEventRepository;
 import com.pathpilot.job.JobApplication;
 import com.pathpilot.job.JobApplicationRepository;
+import com.pathpilot.job.JobFollowup;
+import com.pathpilot.job.JobFollowupRepository;
+import com.pathpilot.job.JobService;
+import com.pathpilot.job.dto.JobDtos.JobFollowupDto;
 import com.pathpilot.planner.Task;
 import com.pathpilot.planner.TaskCategory;
 import com.pathpilot.planner.TaskRepository;
@@ -62,6 +66,7 @@ public class DashboardService {
     private final ProjectRepository projectRepository;
     private final ProjectMilestoneRepository projectMilestoneRepository;
     private final JobApplicationRepository jobApplicationRepository;
+    private final JobFollowupRepository jobFollowupRepository;
 
     public DashboardService(
             UserProfileRepository userProfileRepository,
@@ -70,7 +75,8 @@ public class DashboardService {
             GithubEventRepository githubEventRepository,
             ProjectRepository projectRepository,
             ProjectMilestoneRepository projectMilestoneRepository,
-            JobApplicationRepository jobApplicationRepository
+            JobApplicationRepository jobApplicationRepository,
+            JobFollowupRepository jobFollowupRepository
     ) {
         this.userProfileRepository = userProfileRepository;
         this.taskRepository = taskRepository;
@@ -79,6 +85,7 @@ public class DashboardService {
         this.projectRepository = projectRepository;
         this.projectMilestoneRepository = projectMilestoneRepository;
         this.jobApplicationRepository = jobApplicationRepository;
+        this.jobFollowupRepository = jobFollowupRepository;
     }
 
     @Transactional(readOnly = true)
@@ -199,18 +206,49 @@ public class DashboardService {
             );
         }).orElse(null);
 
-        // 6. Recent Job Applications (last 3)
-        List<JobApplication> applications = jobApplicationRepository.findTop3ByUserIdOrderByAppliedDateDescIdDesc(userId);
+        // 6. Recent Job Applications (last 3) & Upcoming Follow-ups (next 7 days + overdue)
+        List<JobApplication> applications = jobApplicationRepository
+                .findTop3ByUserIdAndDeletedAtUtcIsNullOrderByAppliedDateDescIdDesc(userId);
         List<RecentApplicationDto> recentApplications = applications.stream()
                 .map(app -> new RecentApplicationDto(
                         app.getId(),
                         app.getCompanyName(),
                         app.getRoleTitle(),
-                        app.getStatus(),
+                        JobService.normalizeStatusSafe(app.getStatus()),
                         app.getAppliedDate(),
                         app.getLocation(),
                         app.getDataSource()
                 ))
+                .toList();
+
+        List<JobFollowup> pendingFollowups = jobFollowupRepository
+                .findAllByUserIdAndStatusAndDeletedAtUtcIsNullAndDueDateLessThanEqualOrderByDueDateAscIdAsc(
+                        userId, JobFollowup.STATUS_PENDING, targetDate.plusDays(7)
+                );
+        Map<Long, JobApplication> allActiveJobsById = pendingFollowups.isEmpty()
+                ? Map.of()
+                : jobApplicationRepository.findAllByUserIdAndDeletedAtUtcIsNullOrderByAppliedDateDescIdDesc(userId)
+                        .stream()
+                        .collect(Collectors.toMap(JobApplication::getId, a -> a, (a, b) -> a));
+        List<JobFollowupDto> upcomingFollowups = pendingFollowups.stream()
+                .filter(f -> allActiveJobsById.containsKey(f.getJobApplicationId()))
+                .map(f -> {
+                    JobApplication app = allActiveJobsById.get(f.getJobApplicationId());
+                    boolean overdue = f.getDueDate() != null && f.getDueDate().isBefore(targetDate);
+                    return new JobFollowupDto(
+                            f.getId(),
+                            f.getJobApplicationId(),
+                            app.getCompanyName(),
+                            app.getRoleTitle(),
+                            JobService.normalizeStatusSafe(app.getStatus()),
+                            f.getDueDate(),
+                            overdue,
+                            f.getNote(),
+                            f.getStatus(),
+                            f.getCompletedAtUtc(),
+                            f.getReminderAtUtc()
+                    );
+                })
                 .toList();
 
         // 7. Quick Links from user_profiles
@@ -244,6 +282,7 @@ public class DashboardService {
                 githubWeeks,
                 currentProject,
                 recentApplications,
+                upcomingFollowups,
                 links,
                 recommendation
         );

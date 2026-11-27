@@ -61,9 +61,10 @@
 - [x] Milestone-based project progress in `ProgressCalculator` (returns `null` when zero milestones, feeds Project cards and Dashboard Project Progress card) (2026-11-27)
 - [x] Profile Links & Settings (`Portfolio`, `GitHub` username/URL, `LeetCode`, optional `LinkedIn` & `CodingBat` with `https://` validation, time zone dropdown, skills with Beginner/Working/Comfortable levels, target roles) + prominent 3 link pills on Dashboard & Projects page (2026-11-27)
 - [x] `/app/projects` page (Page 4A: stacked `My Projects` + `Job Applications` placeholder on desktop, tabs on mobile, responsive cards, detail drawer with Overview/Milestones/Work Log/Media, work logs synced to Coding day drawer & Monthly progress) (2026-11-27)
-- [ ] **Phase 5B / Page 4A Test Gate**: Run `mvn test` and `npm run build`, create `"PathPilot"` with 4 milestones and complete 1 -> 25% on card & Dashboard, verify zero-milestone empty state, cross-user 404 isolation, and valid external link behavior
-- [ ] Backend CRUD for `job_applications` and automatic `job_status_history` tracking (Prompt 10)
-- [ ] Full `Job Applications` table & job-description skill analysis on `/app/projects` (Prompt 10)
+- [x] **Phase 5B / Page 4A Test Gate**: Ran `mvn test` (51/51 passed) and `npm run build` (passed) (2026-11-27)
+- [x] Backend CRUD for `job_applications`, `job_status_history`, and `job_followups` (`V9__job_applications_and_followups.sql`, strict `CurrentUser.id()` filtering, plain-text JD sanitization, date/URL validation, follow-up reminders in `ReminderService`, Monthly Planner `JOB_APPLICATIONS` goal count, Dashboard `Recent Job Applications` + `Upcoming Follow-ups`) (2026-11-27)
+- [x] Full `Job Applications` section on `/app/projects` (`stats` strip, search/status/date filters, `View All` / pagination, inline status dropdown writing `job_status_history`, detail drawer with `Details` + Interview Prep Checklist / `Timeline` / `Notes` / disabled `"Analyse with AI"`, `Upcoming Follow-ups` card with amber overdue highlighting) (2026-11-27)
+- [ ] **Phase 6 / Page 4B Test Gate**: Run `mvn test` and `npm run build`, add 3 applications with different statuses -> verify stats, dashboard, and timeline timestamps, set a follow-up for tomorrow -> verify Upcoming Follow-ups & reminder, and verify Monthly `JOB_APPLICATIONS` goal count matches applied rows in month
 
 ## Phase 7: Monthly Reports & Spring Scheduling
 - [ ] Backend `monthly_reports` generation using `ProgressCalculator` (`CALCULATED` badge)

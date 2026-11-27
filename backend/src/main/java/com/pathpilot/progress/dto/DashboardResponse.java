@@ -1,5 +1,7 @@
 package com.pathpilot.progress.dto;
 
+import com.pathpilot.job.dto.JobDtos.JobFollowupDto;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -16,6 +18,7 @@ public record DashboardResponse(
         List<GithubWeekDto> githubWeeks,
         CurrentProjectDto currentProject,
         List<RecentApplicationDto> recentApplications,
+        List<JobFollowupDto> upcomingFollowups,
         QuickLinksDto links,
         RecommendationDto recommendation
 ) {

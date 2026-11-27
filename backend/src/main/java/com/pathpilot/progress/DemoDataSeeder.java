@@ -173,9 +173,9 @@ public class DemoDataSeeder implements CommandLineRunner {
         seedMilestone(userId, savedProject.getId(), "Deployment checklist", "PLANNED", null, 4);
 
         // 3 recent fictional applications
-        seedApplication(userId, "Northstar Labs (DEMO)", "Junior Java Developer", "INTERVIEW", today.minusDays(2), "Bengaluru");
-        seedApplication(userId, "BluePeak Systems (DEMO)", "Associate Backend Engineer", "APPLIED", today.minusDays(5), "Hyderabad");
-        seedApplication(userId, "CloudHarbor Tech (DEMO)", "Java Full Stack Trainee", "ASSESSMENT", today.minusDays(9), "Remote");
+        seedApplication(userId, "Northstar Labs (DEMO)", "Junior Java Developer", "INTERVIEW", today.minusDays(2), "Bengaluru", "LINKEDIN", today.plusDays(1));
+        seedApplication(userId, "BluePeak Systems (DEMO)", "Associate Backend Engineer", "APPLIED", today.minusDays(5), "Hyderabad", "COMPANY_SITE", null);
+        seedApplication(userId, "CloudHarbor Tech (DEMO)", "Java Full Stack Trainee", "ASSESSMENT", today.minusDays(9), "Remote", "REFERRAL", null);
 
         log.info("Demo profile active: seeded sample DEMO records for {}", DEMO_EMAIL);
     }
@@ -226,7 +226,9 @@ public class DemoDataSeeder implements CommandLineRunner {
             String role,
             String status,
             LocalDate appliedDate,
-            String location
+            String location,
+            String source,
+            LocalDate followupDate
     ) {
         JobApplication app = new JobApplication();
         app.setUserId(userId);
@@ -235,6 +237,8 @@ public class DemoDataSeeder implements CommandLineRunner {
         app.setStatus(status);
         app.setAppliedDate(appliedDate);
         app.setLocation(location);
+        app.setSource(source);
+        app.setFollowupDate(followupDate);
         app.setDataSource("DEMO");
         jobApplicationRepository.save(app);
     }

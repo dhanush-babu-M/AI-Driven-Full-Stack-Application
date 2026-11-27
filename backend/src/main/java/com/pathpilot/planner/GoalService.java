@@ -254,10 +254,9 @@ public class GoalService {
                 }
             }
             case JOB_APPLICATIONS -> {
-                var apps = jobApplicationRepository.findAllByUserIdAndAppliedDateBetween(userId, start, end);
-                if (!apps.isEmpty()) {
-                    return new DoneCountResult(apps.size(), "CALCULATED", "Calculated from job applications in period");
-                }
+                var apps = jobApplicationRepository
+                        .findAllByUserIdAndDeletedAtUtcIsNullAndAppliedDateBetween(userId, start, end);
+                return new DoneCountResult(apps.size(), "CALCULATED", "Calculated from job applications in period");
             }
             case PROJECTS -> {
                 List<ProjectMilestone> milestones = projectMilestoneRepository

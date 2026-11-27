@@ -4,6 +4,8 @@ import com.pathpilot.coding.CodingActivityRepository;
 import com.pathpilot.github.ConnectedAccountRepository;
 import com.pathpilot.github.GithubEventRepository;
 import com.pathpilot.job.JobApplicationRepository;
+import com.pathpilot.job.JobFollowupRepository;
+import com.pathpilot.job.JobStatusHistoryRepository;
 import com.pathpilot.planner.DailyLog;
 import com.pathpilot.planner.DailyLogRepository;
 import com.pathpilot.planner.Goal;
@@ -89,6 +91,8 @@ class WeeklyMonthlyIntegrationTest {
     @MockitoBean private ProjectWorklogRepository projectWorklogRepository;
     @MockitoBean private ProjectMediaRepository projectMediaRepository;
     @MockitoBean private JobApplicationRepository jobApplicationRepository;
+    @MockitoBean private JobFollowupRepository jobFollowupRepository;
+    @MockitoBean private JobStatusHistoryRepository jobStatusHistoryRepository;
 
     private MockMvc mockMvc;
     private final Map<Long, User> users = new ConcurrentHashMap<>();

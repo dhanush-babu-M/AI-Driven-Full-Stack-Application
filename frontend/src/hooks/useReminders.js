@@ -85,7 +85,8 @@ export function useReminders() {
 
   const fireReminder = useCallback(
     (item, prefs, isMissed) => {
-      const dedupeKey = `${item.taskId}:${item.reminderAtUtc}`;
+      const itemId = item.followupId ? `FOLLOWUP:${item.followupId}` : `TASK:${item.taskId}`;
+      const dedupeKey = `${itemId}:${item.reminderAtUtc}`;
       if (firedKeysRef.current.has(dedupeKey)) return;
 
       const quietNow =
@@ -98,6 +99,7 @@ export function useReminders() {
       const timeLabel = item.startTime ? formatTime12h(item.startTime) : 'scheduled';
       const prefix = isMissed ? 'You missed: ' : 'Reminder: ';
       const message = `${prefix}${item.title} (${timeLabel})`;
+      const linkPath = item.linkPath || `/app/planner/daily?date=${item.taskDate}`;
 
       setActiveToast({
         message,
@@ -108,8 +110,11 @@ export function useReminders() {
         {
           id: dedupeKey,
           taskId: item.taskId,
+          followupId: item.followupId,
+          itemType: item.itemType || 'TASK',
           title: item.title,
           taskDate: item.taskDate,
+          linkPath,
           timeLabel,
           isMissed,
           read: false,
@@ -126,7 +131,7 @@ export function useReminders() {
       ) {
         try {
           const notif = new window.Notification(
-            isMissed ? `Missed Task: ${item.title}` : `PathPilot Reminder`,
+            isMissed ? `Missed Reminder: ${item.title}` : `PathPilot Reminder`,
             {
               body: `${item.title} at ${timeLabel}`,
               tag: dedupeKey,
@@ -134,7 +139,7 @@ export function useReminders() {
           );
           notif.onclick = () => {
             window.focus();
-            navigate(`/app/planner/daily?date=${item.taskDate}`);
+            navigate(linkPath);
             notif.close();
           };
         } catch {
@@ -165,7 +170,8 @@ export function useReminders() {
       const nowMs = Date.now();
       for (const item of list) {
         if (!item.reminderAtUtc) continue;
-        const dedupeKey = `${item.taskId}:${item.reminderAtUtc}`;
+        const itemId = item.followupId ? `FOLLOWUP:${item.followupId}` : `TASK:${item.taskId}`;
+        const dedupeKey = `${itemId}:${item.reminderAtUtc}`;
         if (firedKeysRef.current.has(dedupeKey)) continue;
 
         const targetMs = new Date(item.reminderAtUtc).getTime();

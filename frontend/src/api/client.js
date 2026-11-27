@@ -453,4 +453,73 @@ export function getProjectMediaFileUrl(fileUrl) {
   return `${API_BASE_URL}${fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`}`;
 }
 
+// Job Applications
+export function fetchJobs(params = {}) {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') qs.set(k, v);
+  });
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return apiFetch(`/api/jobs${suffix}`);
+}
+
+export function fetchJobStats() {
+  return apiFetch('/api/jobs/stats');
+}
+
+export function fetchJobDetail(id) {
+  return apiFetch(`/api/jobs/${id}`);
+}
+
+export function createJob(payload) {
+  return apiFetch('/api/jobs', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateJob(id, payload) {
+  return apiFetch(`/api/jobs/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateJobStatus(id, payload) {
+  return apiFetch(`/api/jobs/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateJobChecklist(id, items) {
+  return apiFetch(`/api/jobs/${id}/checklist`, {
+    method: 'PUT',
+    body: JSON.stringify({ items }),
+  });
+}
+
+export function deleteJob(id) {
+  return apiFetch(`/api/jobs/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function fetchUpcomingFollowups() {
+  return apiFetch('/api/jobs/followups/upcoming');
+}
+
+export function markFollowupDone(followupId) {
+  return apiFetch(`/api/jobs/followups/${followupId}/done`, {
+    method: 'PATCH',
+  });
+}
+
+export function rescheduleFollowup(followupId, payload) {
+  return apiFetch(`/api/jobs/followups/${followupId}/reschedule`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
 export { API_BASE_URL };

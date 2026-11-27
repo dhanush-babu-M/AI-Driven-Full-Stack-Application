@@ -155,7 +155,7 @@ export default function TopBar({
                       }`}
                     >
                       <Link
-                        to={`/app/planner/daily?date=${a.taskDate}`}
+                        to={a.linkPath || `/app/planner/daily?date=${a.taskDate}`}
                         onClick={() => setNotifOpen(false)}
                         className="block"
                       >
@@ -170,14 +170,17 @@ export default function TopBar({
                     </li>
                   ))}
                   {upcomingReminders
-                    .filter((u) => !alerts.some((a) => a.taskId === u.taskId))
+                    .filter((u) => {
+                      const uKey = u.followupId ? `FOLLOWUP:${u.followupId}:${u.reminderAtUtc}` : `TASK:${u.taskId}:${u.reminderAtUtc}`;
+                      return !alerts.some((a) => a.id === uKey);
+                    })
                     .map((u) => (
                       <li
-                        key={u.taskId}
+                        key={u.followupId ? `followup-${u.followupId}` : `task-${u.taskId}`}
                         className="rounded-xl border border-border/70 bg-canvas/50 p-2.5"
                       >
                         <Link
-                          to={`/app/planner/daily?date=${u.taskDate}`}
+                          to={u.linkPath || `/app/planner/daily?date=${u.taskDate}`}
                           onClick={() => setNotifOpen(false)}
                           className="block"
                         >

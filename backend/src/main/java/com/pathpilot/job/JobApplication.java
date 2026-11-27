@@ -35,8 +35,32 @@ public class JobApplication {
     @Column(name = "applied_date", nullable = false)
     private LocalDate appliedDate;
 
+    @Column(name = "job_url", length = 500)
+    private String jobUrl;
+
+    @Column(name = "job_description", columnDefinition = "TEXT")
+    private String jobDescription;
+
     @Column(name = "location", length = 150)
     private String location;
+
+    @Column(name = "source", nullable = false, length = 40)
+    private String source = "OTHER";
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
+
+    @Column(name = "recruiter_notes", columnDefinition = "TEXT")
+    private String recruiterNotes;
+
+    @Column(name = "followup_date")
+    private LocalDate followupDate;
+
+    @Column(name = "interview_date")
+    private LocalDate interviewDate;
+
+    @Column(name = "prep_checklist_json", columnDefinition = "TEXT")
+    private String prepChecklistJson;
 
     @Column(name = "data_source", nullable = false, length = 20)
     private String dataSource = "MANUAL";
@@ -46,6 +70,9 @@ public class JobApplication {
 
     @Column(name = "updated_at_utc", nullable = false)
     private Instant updatedAtUtc;
+
+    @Column(name = "deleted_at_utc")
+    private Instant deletedAtUtc;
 
     @PrePersist
     void onCreate() {
@@ -60,6 +87,7 @@ public class JobApplication {
     }
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
     public String getCompanyName() { return companyName; }
@@ -70,8 +98,30 @@ public class JobApplication {
     public void setStatus(String status) { this.status = status; }
     public LocalDate getAppliedDate() { return appliedDate; }
     public void setAppliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; }
+    public String getJobUrl() { return jobUrl; }
+    public void setJobUrl(String jobUrl) { this.jobUrl = jobUrl; }
+    public String getJobDescription() { return jobDescription; }
+    public void setJobDescription(String jobDescription) { this.jobDescription = jobDescription; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+    public String getSource() { return source; }
+    public void setSource(String source) { this.source = source; }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+    public String getRecruiterNotes() { return recruiterNotes; }
+    public void setRecruiterNotes(String recruiterNotes) { this.recruiterNotes = recruiterNotes; }
+    public LocalDate getFollowupDate() { return followupDate; }
+    public void setFollowupDate(LocalDate followupDate) { this.followupDate = followupDate; }
+    public LocalDate getInterviewDate() { return interviewDate; }
+    public void setInterviewDate(LocalDate interviewDate) { this.interviewDate = interviewDate; }
+    public String getPrepChecklistJson() { return prepChecklistJson; }
+    public void setPrepChecklistJson(String prepChecklistJson) { this.prepChecklistJson = prepChecklistJson; }
     public String getDataSource() { return dataSource; }
     public void setDataSource(String dataSource) { this.dataSource = dataSource; }
+    public Instant getCreatedAtUtc() { return createdAtUtc; }
+    public void setCreatedAtUtc(Instant createdAtUtc) { this.createdAtUtc = createdAtUtc; }
+    public Instant getUpdatedAtUtc() { return updatedAtUtc; }
+    public void setUpdatedAtUtc(Instant updatedAtUtc) { this.updatedAtUtc = updatedAtUtc; }
+    public Instant getDeletedAtUtc() { return deletedAtUtc; }
+    public void setDeletedAtUtc(Instant deletedAtUtc) { this.deletedAtUtc = deletedAtUtc; }
 }

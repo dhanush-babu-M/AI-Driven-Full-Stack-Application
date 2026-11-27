@@ -7,6 +7,8 @@ import com.pathpilot.github.GithubEvent;
 import com.pathpilot.github.GithubEventRepository;
 import com.pathpilot.job.JobApplication;
 import com.pathpilot.job.JobApplicationRepository;
+import com.pathpilot.job.JobFollowupRepository;
+import com.pathpilot.job.JobStatusHistoryRepository;
 import com.pathpilot.planner.DailyLogRepository;
 import com.pathpilot.planner.GoalRepository;
 import com.pathpilot.planner.LearningRecordRepository;
@@ -126,6 +128,12 @@ class DemoDashboardIntegrationTest {
     @MockitoBean
     private JobApplicationRepository jobApplicationRepository;
 
+    @MockitoBean
+    private JobFollowupRepository jobFollowupRepository;
+
+    @MockitoBean
+    private JobStatusHistoryRepository jobStatusHistoryRepository;
+
     private MockMvc mockMvc;
     private final Map<Long, User> users = new ConcurrentHashMap<>();
     private final Map<Long, UserProfile> profiles = new ConcurrentHashMap<>();
@@ -237,6 +245,10 @@ class DemoDashboardIntegrationTest {
         });
         when(jobApplicationRepository.findTop3ByUserIdOrderByAppliedDateDescIdDesc(anyLong()))
                 .thenAnswer(inv -> applications.stream().limit(3).toList());
+        when(jobApplicationRepository.findTop3ByUserIdAndDeletedAtUtcIsNullOrderByAppliedDateDescIdDesc(anyLong()))
+                .thenAnswer(inv -> applications.stream().limit(3).toList());
+        when(jobApplicationRepository.findAllByUserIdAndDeletedAtUtcIsNullOrderByAppliedDateDescIdDesc(anyLong()))
+                .thenAnswer(inv -> applications);
     }
 
     @Test

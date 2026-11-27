@@ -185,5 +185,24 @@ All error responses (`400`, `401`, `409`, `429`, `500`) return:
 - `GET /api/projects/{projectId}/media/{mediaId}/file` — Serves the stored screenshot only to its authenticated owner with `X-Content-Type-Options: nosniff`.
 - `DELETE /api/projects/{projectId}/media/{mediaId}` — Deletes a screenshot (from DB and disk) or demo video link.
 
+---
+
+## Job Applications, Status History & Follow-ups (All Require Auth & Filter by `CurrentUser.id()`)
+
+Manual entry only (no scraping or external site fetches).
+
+- `GET /api/jobs?search=&status=&from=&to=&page=0&size=10` — Lists non-soft-deleted applications owned by `CurrentUser.id()` with search, status, applied-date range filtering, and pagination (`size=500` for View All).
+- `GET /api/jobs/stats` — Computes `total`, per-status counts (`INTERESTED`, `TO_APPLY`, `APPLIED`, `FOLLOW_UP_NEEDED`, `ASSESSMENT`, `INTERVIEW`, `REJECTED`, `OFFER_RECEIVED`), and `followupsDueThisWeek` (pending follow-ups with `dueDate <= today + 7d`).
+- `GET /api/jobs/followups/upcoming` — Lists pending follow-ups due within the next 7 days plus overdue items (`overdue: true`), sorted by `dueDate ASC`.
+- `PATCH /api/jobs/followups/{followupId}/done` — Marks a follow-up `DONE` and updates the application's active `followupDate`.
+- `PATCH /api/jobs/followups/{followupId}/reschedule` — Reschedules a follow-up date (`dueDate >= appliedDate`) and recalculates `reminder_at_utc`.
+- `GET /api/jobs/{id}` — Returns `JobApplicationDetailDto` including sanitized plain-text `jobDescription`, `prepChecklist`, `statusHistory` (newest-first with `changedAtUtc`), and `followups` (`404 JOB_NOT_FOUND` if not owned by caller).
+- `POST /api/jobs` — Creates an application (validates `companyName`, `roleTitle`, `appliedDate` not > 7 days in future, `followupDate >= appliedDate`, `interviewDate >= appliedDate`, `jobUrl` as `http://`/`https://`, strips HTML/script tags from pasted job descriptions), writes the initial `job_status_history` row, and creates a `job_followups` reminder if `followupDate` is set.
+- `PUT /api/jobs/{id}` — Updates application details, appends to `job_status_history` if status changed, and syncs the pending follow-up reminder.
+- `PATCH /api/jobs/{id}/status` — Updates status from table dropdown or drawer and writes `(previousStatus, newStatus, changedAtUtc, note)` to `job_status_history`.
+- `PUT /api/jobs/{id}/checklist` — Replaces the editable interview prep checklist (`[{id, text, done}]`).
+- `DELETE /api/jobs/{id}` — Soft-deletes the application and its pending follow-ups.
+- `GET /api/reminders/upcoming?hours=24` — Now also includes pending `FOLLOWUP` reminders due today or tomorrow (linking to `/app/projects?tab=applications&jobId=...`).
+
 
 
