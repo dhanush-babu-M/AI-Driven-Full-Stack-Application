@@ -173,11 +173,16 @@ public class DashboardService {
         boolean hasGithubActivity = !githubEvents.isEmpty();
         List<GithubWeekDto> githubWeeks = buildGithubWeeks(gridStart, targetDate, githubEvents);
 
-        // 5. Current Project Progress
-        Optional<Project> projectOpt = projectRepository.findFirstByUserIdOrderByUpdatedAtUtcDescIdDesc(userId);
+        // 5. Current Project Progress (prioritize active/CURRENT non-deleted project)
+        List<Project> userProjects = projectRepository
+                .findAllByUserIdAndDeletedAtUtcIsNullOrderByUpdatedAtUtcDescIdDesc(userId);
+        Optional<Project> projectOpt = userProjects.stream()
+                .filter(p -> "CURRENT".equalsIgnoreCase(p.getStatus()) || "IN_PROGRESS".equalsIgnoreCase(p.getStatus()))
+                .findFirst()
+                .or(() -> userProjects.stream().findFirst());
         CurrentProjectDto currentProject = projectOpt.map(project -> {
             List<ProjectMilestone> milestones = projectMilestoneRepository
-                    .findAllByUserIdAndProjectIdOrderBySortOrderAscIdAsc(userId, project.getId());
+                    .findAllByUserIdAndProjectIdAndDeletedAtUtcIsNullOrderBySortOrderAscIdAsc(userId, project.getId());
             List<String> milestoneStatuses = milestones.stream().map(ProjectMilestone::getStatus).toList();
             int completedMilestones = (int) milestoneStatuses.stream()
                     .filter(ProgressCalculator.STATUS_COMPLETED::equalsIgnoreCase)
@@ -209,11 +214,16 @@ public class DashboardService {
                 .toList();
 
         // 7. Quick Links from user_profiles
+        String leetcode = (profile.getLeetcodeUrl() != null && !profile.getLeetcodeUrl().isBlank())
+                ? profile.getLeetcodeUrl()
+                : profile.getCodingProfileUrl();
         QuickLinksDto links = new QuickLinksDto(
                 profile.getPortfolioUrl(),
                 profile.getGithubUrl(),
                 profile.getLinkedinUrl(),
-                profile.getCodingProfileUrl()
+                leetcode,
+                leetcode,
+                profile.getCodingbatUrl()
         );
 
         // 8. Rule-based Recommendation (no AI calls yet)

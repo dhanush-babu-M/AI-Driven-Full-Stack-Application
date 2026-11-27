@@ -4,8 +4,10 @@ import com.pathpilot.coding.CodingActivityRepository;
 import com.pathpilot.github.ConnectedAccountRepository;
 import com.pathpilot.github.GithubEventRepository;
 import com.pathpilot.job.JobApplicationRepository;
+import com.pathpilot.project.ProjectMediaRepository;
 import com.pathpilot.project.ProjectMilestoneRepository;
 import com.pathpilot.project.ProjectRepository;
+import com.pathpilot.project.ProjectWorklogRepository;
 import com.pathpilot.security.AuthRateLimitFilter;
 import com.pathpilot.user.User;
 import com.pathpilot.user.UserProfile;
@@ -112,6 +114,12 @@ class PlannerIntegrationTest {
 
     @MockitoBean
     private ProjectMilestoneRepository projectMilestoneRepository;
+
+    @MockitoBean
+    private ProjectWorklogRepository projectWorklogRepository;
+
+    @MockitoBean
+    private ProjectMediaRepository projectMediaRepository;
 
     @MockitoBean
     private JobApplicationRepository jobApplicationRepository;

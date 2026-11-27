@@ -133,11 +133,22 @@ public final class CodingDtos {
     ) {
     }
 
+    public record DayProjectWorklogDto(
+            Long id,
+            Long projectId,
+            String projectTitle,
+            int minutesSpent,
+            String summary,
+            String dataSource
+    ) {
+    }
+
     public record DayActivityDetailResponse(
             LocalDate date,
             List<DayGithubEventDto> githubEvents,
             List<CodingActivityDto> codingActivities,
-            List<DayLearningRecordDto> learningRecords
+            List<DayLearningRecordDto> learningRecords,
+            List<DayProjectWorklogDto> projectWorklogs
     ) {
     }
 

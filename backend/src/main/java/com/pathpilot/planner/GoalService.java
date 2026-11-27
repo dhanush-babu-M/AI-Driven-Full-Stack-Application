@@ -261,7 +261,7 @@ public class GoalService {
             }
             case PROJECTS -> {
                 List<ProjectMilestone> milestones = projectMilestoneRepository
-                        .findAllByUserIdAndDueDateBetweenOrderByDueDateAscIdAsc(userId, start, end);
+                        .findAllByUserIdAndDeletedAtUtcIsNullAndDueDateBetweenOrderByDueDateAscIdAsc(userId, start, end);
                 if (!milestones.isEmpty()) {
                     int done = (int) milestones.stream()
                             .filter(m -> "COMPLETED".equalsIgnoreCase(m.getStatus()))

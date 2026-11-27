@@ -12,6 +12,8 @@ import com.pathpilot.planner.LearningRecord;
 import com.pathpilot.planner.LearningRecordRepository;
 import com.pathpilot.planner.RecordHistory;
 import com.pathpilot.planner.RecordHistoryRepository;
+import com.pathpilot.project.ProjectRepository;
+import com.pathpilot.project.ProjectWorklogRepository;
 import com.pathpilot.user.UserProfile;
 import com.pathpilot.user.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +42,8 @@ class CodingServiceTest {
     private CodingActivityRepository codingActivityRepository;
     private GithubEventRepository githubEventRepository;
     private LearningRecordRepository learningRecordRepository;
+    private ProjectWorklogRepository projectWorklogRepository;
+    private ProjectRepository projectRepository;
     private RecordHistoryRepository recordHistoryRepository;
     private UserProfileRepository userProfileRepository;
     private CodingService codingService;
@@ -55,6 +59,8 @@ class CodingServiceTest {
         codingActivityRepository = mock(CodingActivityRepository.class);
         githubEventRepository = mock(GithubEventRepository.class);
         learningRecordRepository = mock(LearningRecordRepository.class);
+        projectWorklogRepository = mock(ProjectWorklogRepository.class);
+        projectRepository = mock(ProjectRepository.class);
         recordHistoryRepository = mock(RecordHistoryRepository.class);
         userProfileRepository = mock(UserProfileRepository.class);
 
@@ -62,9 +68,15 @@ class CodingServiceTest {
                 codingActivityRepository,
                 githubEventRepository,
                 learningRecordRepository,
+                projectWorklogRepository,
+                projectRepository,
                 recordHistoryRepository,
                 userProfileRepository
         );
+        when(projectWorklogRepository.findAllByUserIdAndWorkDateAndDeletedAtUtcIsNullOrderByCreatedAtUtcDescIdDesc(
+                anyLong(), any(LocalDate.class))).thenReturn(List.of());
+        when(projectRepository.findAllByUserIdAndDeletedAtUtcIsNullOrderByUpdatedAtUtcDescIdDesc(anyLong()))
+                .thenReturn(List.of());
 
         UserProfile profile = new UserProfile();
         profile.setUserId(1L);

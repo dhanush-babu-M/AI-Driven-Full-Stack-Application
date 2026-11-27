@@ -104,7 +104,9 @@ public record DashboardResponse(
             String portfolioUrl,
             String githubUrl,
             String linkedinUrl,
-            String codingProfileUrl
+            String codingProfileUrl,
+            String leetcodeUrl,
+            String codingbatUrl
     ) {
     }
 

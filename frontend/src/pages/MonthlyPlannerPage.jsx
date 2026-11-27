@@ -696,6 +696,37 @@ export default function MonthlyPlannerPage() {
               ))}
             </ul>
           )}
+
+          <div className="mt-6 pt-4 border-t border-border/70 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
+                Project Work Logs ({monthly?.projectWorklogs?.length || 0})
+              </h3>
+              <SourceTag source="MANUAL" />
+            </div>
+            {!monthly?.projectWorklogs?.length ? (
+              <p className="text-xs text-muted">
+                No project work logs recorded in {selectedMonth} yet.
+              </p>
+            ) : (
+              <ul className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {monthly.projectWorklogs.map((wl) => (
+                  <li
+                    key={wl.id}
+                    className="rounded-xl border border-border/70 bg-canvas/60 px-3.5 py-2.5 text-xs space-y-1"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-ink truncate">{wl.projectTitle}</span>
+                      <span className="shrink-0 text-muted">
+                        {wl.workDate} · {wl.minutesSpent} min
+                      </span>
+                    </div>
+                    <p className="text-body line-clamp-2">{wl.summary}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </Card>
       </div>
 

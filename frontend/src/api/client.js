@@ -302,6 +302,17 @@ export function fetchGitHubEvents({ from, to } = {}) {
   return apiFetch(`/api/github/events${suffix}`);
 }
 
+export function fetchProfileSettings() {
+  return apiFetch('/api/profile');
+}
+
+export function updateProfileSettings(payload) {
+  return apiFetch('/api/profile', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
 export function fetchProfileLinks() {
   return apiFetch('/api/profile/links');
 }
@@ -311,6 +322,135 @@ export function updateProfileLinks(payload) {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
+}
+
+export function fetchProjects() {
+  return apiFetch('/api/projects');
+}
+
+export function fetchProjectDetail(projectId) {
+  return apiFetch(`/api/projects/${projectId}`);
+}
+
+export function createProject(payload) {
+  return apiFetch('/api/projects', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateProject(projectId, payload) {
+  return apiFetch(`/api/projects/${projectId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateProjectStatus(projectId, payload) {
+  return apiFetch(`/api/projects/${projectId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteProject(projectId) {
+  return apiFetch(`/api/projects/${projectId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function createProjectMilestone(projectId, payload) {
+  return apiFetch(`/api/projects/${projectId}/milestones`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateProjectMilestone(projectId, milestoneId, payload) {
+  return apiFetch(`/api/projects/${projectId}/milestones/${milestoneId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function toggleProjectMilestone(projectId, milestoneId, payload) {
+  return apiFetch(`/api/projects/${projectId}/milestones/${milestoneId}/complete`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteProjectMilestone(projectId, milestoneId) {
+  return apiFetch(`/api/projects/${projectId}/milestones/${milestoneId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function createProjectWorklog(projectId, payload) {
+  return apiFetch(`/api/projects/${projectId}/worklogs`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateProjectWorklog(projectId, worklogId, payload) {
+  return apiFetch(`/api/projects/${projectId}/worklogs/${worklogId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteProjectWorklog(projectId, worklogId) {
+  return apiFetch(`/api/projects/${projectId}/worklogs/${worklogId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function uploadProjectScreenshot(projectId, file, caption = '') {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (caption && caption.trim()) {
+    formData.append('caption', caption.trim());
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/media/upload`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await response.json() : null;
+  if (!response.ok) {
+    throw new ApiError(
+      data?.message || `Upload failed with status ${response.status}`,
+      data?.status || response.status,
+      data?.code || 'HTTP_ERROR',
+      data?.fieldErrors || {}
+    );
+  }
+  return data;
+}
+
+export function addProjectVideoLink(projectId, payload) {
+  return apiFetch(`/api/projects/${projectId}/media/video`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteProjectMedia(projectId, mediaId) {
+  return apiFetch(`/api/projects/${projectId}/media/${mediaId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getProjectMediaFileUrl(fileUrl) {
+  if (!fileUrl) return '';
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    return fileUrl;
+  }
+  return `${API_BASE_URL}${fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`}`;
 }
 
 export { API_BASE_URL };

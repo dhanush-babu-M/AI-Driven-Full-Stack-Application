@@ -11,8 +11,10 @@ import com.pathpilot.planner.NotificationPreferencesRepository;
 import com.pathpilot.planner.RecordHistoryRepository;
 import com.pathpilot.planner.TaskRepository;
 import com.pathpilot.planner.WeeklyReviewRepository;
+import com.pathpilot.project.ProjectMediaRepository;
 import com.pathpilot.project.ProjectMilestoneRepository;
 import com.pathpilot.project.ProjectRepository;
+import com.pathpilot.project.ProjectWorklogRepository;
 import com.pathpilot.security.AuthRateLimitFilter;
 import com.pathpilot.user.User;
 import com.pathpilot.user.UserProfile;
@@ -111,6 +113,12 @@ class AuthIntegrationTest {
 
     @MockitoBean
     private ProjectMilestoneRepository projectMilestoneRepository;
+
+    @MockitoBean
+    private ProjectWorklogRepository projectWorklogRepository;
+
+    @MockitoBean
+    private ProjectMediaRepository projectMediaRepository;
 
     @MockitoBean
     private JobApplicationRepository jobApplicationRepository;

@@ -11,10 +11,15 @@ import com.pathpilot.progress.dto.DashboardResponse.CategoryRatesDto;
 import com.pathpilot.progress.dto.PeriodProgressDtos.CategoryChangeDto;
 import com.pathpilot.progress.dto.PeriodProgressDtos.DayTaskCountDto;
 import com.pathpilot.progress.dto.PeriodProgressDtos.MonthMilestoneDto;
+import com.pathpilot.progress.dto.PeriodProgressDtos.MonthWorklogDto;
 import com.pathpilot.progress.dto.PeriodProgressDtos.MonthlyProgressResponse;
 import com.pathpilot.progress.dto.PeriodProgressDtos.WeeklyProgressResponse;
+import com.pathpilot.project.Project;
 import com.pathpilot.project.ProjectMilestone;
 import com.pathpilot.project.ProjectMilestoneRepository;
+import com.pathpilot.project.ProjectRepository;
+import com.pathpilot.project.ProjectWorklog;
+import com.pathpilot.project.ProjectWorklogRepository;
 import com.pathpilot.user.UserProfile;
 import com.pathpilot.user.UserProfileRepository;
 import org.springframework.stereotype.Service;
@@ -34,17 +39,23 @@ public class PeriodProgressService {
     private final TaskRepository taskRepository;
     private final TaskService taskService;
     private final ProjectMilestoneRepository projectMilestoneRepository;
+    private final ProjectWorklogRepository projectWorklogRepository;
+    private final ProjectRepository projectRepository;
 
     public PeriodProgressService(
             UserProfileRepository userProfileRepository,
             TaskRepository taskRepository,
             TaskService taskService,
-            ProjectMilestoneRepository projectMilestoneRepository
+            ProjectMilestoneRepository projectMilestoneRepository,
+            ProjectWorklogRepository projectWorklogRepository,
+            ProjectRepository projectRepository
     ) {
         this.userProfileRepository = userProfileRepository;
         this.taskRepository = taskRepository;
         this.taskService = taskService;
         this.projectMilestoneRepository = projectMilestoneRepository;
+        this.projectWorklogRepository = projectWorklogRepository;
+        this.projectRepository = projectRepository;
     }
 
     @Transactional(readOnly = true)
@@ -135,7 +146,9 @@ public class PeriodProgressService {
 
         List<MonthDaySummaryDto> daySummaries = taskService.getMonthSummary(userId, month);
         List<ProjectMilestone> milestones = projectMilestoneRepository
-                .findAllByUserIdAndDueDateBetweenOrderByDueDateAscIdAsc(userId, range.start(), range.end());
+                .findAllByUserIdAndDeletedAtUtcIsNullAndDueDateBetweenOrderByDueDateAscIdAsc(
+                        userId, range.start(), range.end()
+                );
         List<MonthMilestoneDto> milestoneDtos = milestones.stream()
                 .map(m -> new MonthMilestoneDto(
                         m.getId(),
@@ -144,6 +157,26 @@ public class PeriodProgressService {
                         m.getDueDate(),
                         m.getStatus(),
                         m.getDataSource()
+                ))
+                .toList();
+
+        List<ProjectWorklog> worklogs = projectWorklogRepository
+                .findAllByUserIdAndDeletedAtUtcIsNullAndWorkDateBetweenOrderByWorkDateDescIdDesc(
+                        userId, range.start(), range.end()
+                );
+        java.util.Map<Long, String> projectTitles = projectRepository
+                .findAllByUserIdAndDeletedAtUtcIsNullOrderByUpdatedAtUtcDescIdDesc(userId)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(Project::getId, Project::getTitle, (a, b) -> a));
+        List<MonthWorklogDto> worklogDtos = worklogs.stream()
+                .map(w -> new MonthWorklogDto(
+                        w.getId(),
+                        w.getProjectId(),
+                        projectTitles.getOrDefault(w.getProjectId(), "Project #" + w.getProjectId()),
+                        w.getWorkDate(),
+                        w.getMinutesSpent(),
+                        w.getSummary(),
+                        w.getDataSource()
                 ))
                 .toList();
 
@@ -162,7 +195,8 @@ public class PeriodProgressService {
                 categoryRates,
                 categoryChanges,
                 daySummaries,
-                milestoneDtos
+                milestoneDtos,
+                worklogDtos
         );
     }
 

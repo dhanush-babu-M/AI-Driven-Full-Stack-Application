@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   fetchNotificationPreferences,
-  fetchProfileLinks,
+  fetchProfileSettings,
   updateNotificationPreferences,
-  updateProfileLinks,
+  updateProfileSettings,
 } from '../api/client';
 import Card from '../components/Card';
 import PageHeader from '../components/PageHeader';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { notifyRemindersChanged } from '../hooks/useReminders';
+import { isValidHttpsUrl } from '../utils/urlValidation';
 
 const LEAD_TIME_OPTIONS = [
   { value: 0, label: '0 minutes (at start time)' },
@@ -19,15 +20,54 @@ const LEAD_TIME_OPTIONS = [
   { value: 30, label: '30 minutes before' },
 ];
 
+const SKILL_LEVELS = ['Beginner', 'Working', 'Comfortable'];
+
+const SKILL_LEVEL_BADGE = {
+  Beginner: 'bg-slate-100 text-slate-700 border-slate-200',
+  Working: 'bg-primary-soft text-primary border-primary/25',
+  Comfortable: 'bg-completed-soft text-completed border-completed/25',
+};
+
+const COMMON_TIME_ZONES = [
+  'Asia/Kolkata',
+  'UTC',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'Europe/London',
+  'Europe/Berlin',
+  'Asia/Dubai',
+  'Asia/Singapore',
+  'Asia/Tokyo',
+  'Australia/Sydney',
+];
+
+function getTimeZoneOptions(currentTz) {
+  let supported = COMMON_TIME_ZONES;
+  try {
+    if (typeof Intl !== 'undefined' && typeof Intl.supportedValuesOf === 'function') {
+      const all = Intl.supportedValuesOf('timeZone');
+      if (Array.isArray(all) && all.length > 0) {
+        supported = all;
+      }
+    }
+  } catch {
+    supported = COMMON_TIME_ZONES;
+  }
+  const merged = new Set([currentTz || 'Asia/Kolkata', ...COMMON_TIME_ZONES, ...supported]);
+  return Array.from(merged).filter(Boolean);
+}
+
 function getBrowserPermissionState() {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return 'unsupported';
   }
-  return window.Notification.permission; // 'granted' | 'denied' | 'default'
+  return window.Notification.permission;
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [permission, setPermission] = useState(getBrowserPermissionState);
   const [browserEnabled, setBrowserEnabled] = useState(false);
   const [leadMinutes, setLeadMinutes] = useState(10);
@@ -35,21 +75,34 @@ export default function SettingsPage() {
   const [quietHoursEnd, setQuietHoursEnd] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [githubUsername, setGithubUsername] = useState('');
+
+  // Profile fields
+  const [timeZone, setTimeZone] = useState(user?.timeZone || 'Asia/Kolkata');
+  const [targetRoles, setTargetRoles] = useState([]);
+  const [roleInput, setRoleInput] = useState('');
+  const [skills, setSkills] = useState([]);
+  const [skillNameInput, setSkillNameInput] = useState('');
+  const [skillLevelInput, setSkillLevelInput] = useState('Working');
+
+  // Profile links
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [githubInput, setGithubInput] = useState('');
   const [leetcodeUrl, setLeetcodeUrl] = useState('');
   const [codingbatUrl, setCodingbatUrl] = useState('');
-  const [portfolioUrl, setPortfolioUrl] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [savingLinks, setSavingLinks] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const [toast, setToast] = useState({ message: '', type: 'info' });
+
+  const timeZoneOptions = useMemo(() => getTimeZoneOptions(timeZone), [timeZone]);
 
   useEffect(() => {
     let active = true;
     Promise.all([
       fetchNotificationPreferences().catch(() => null),
-      fetchProfileLinks().catch(() => null),
+      fetchProfileSettings().catch(() => null),
     ])
-      .then(([prefs, links]) => {
+      .then(([prefs, profile]) => {
         if (!active) return;
         if (prefs) {
           setBrowserEnabled(Boolean(prefs.browserEnabled));
@@ -57,12 +110,15 @@ export default function SettingsPage() {
           setQuietHoursStart(prefs.quietHoursStart ? prefs.quietHoursStart.slice(0, 5) : '');
           setQuietHoursEnd(prefs.quietHoursEnd ? prefs.quietHoursEnd.slice(0, 5) : '');
         }
-        if (links) {
-          setGithubUsername(links.githubUsername || '');
-          setLeetcodeUrl(links.leetcodeUrl || '');
-          setCodingbatUrl(links.codingbatUrl || '');
-          setPortfolioUrl(links.portfolioUrl || '');
-          setLinkedinUrl(links.linkedinUrl || '');
+        if (profile) {
+          setTimeZone(profile.timeZone || 'Asia/Kolkata');
+          setTargetRoles(profile.targetRoles || []);
+          setSkills(profile.skills || []);
+          setPortfolioUrl(profile.portfolioUrl || '');
+          setGithubInput(profile.githubUrl || profile.githubUsername || '');
+          setLeetcodeUrl(profile.leetcodeUrl || '');
+          setCodingbatUrl(profile.codingbatUrl || '');
+          setLinkedinUrl(profile.linkedinUrl || '');
         }
       })
       .finally(() => {
@@ -72,6 +128,112 @@ export default function SettingsPage() {
       active = false;
     };
   }, []);
+
+  const addRole = () => {
+    const cleaned = roleInput.trim();
+    if (!cleaned) return;
+    if (!targetRoles.some((r) => r.toLowerCase() === cleaned.toLowerCase())) {
+      setTargetRoles((prev) => [...prev, cleaned]);
+    }
+    setRoleInput('');
+  };
+
+  const removeRole = (role) => {
+    setTargetRoles((prev) => prev.filter((r) => r !== role));
+  };
+
+  const addSkill = () => {
+    const cleaned = skillNameInput.trim();
+    if (!cleaned) return;
+    setSkills((prev) => {
+      const idx = prev.findIndex((s) => s.name.toLowerCase() === cleaned.toLowerCase());
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { name: cleaned, level: skillLevelInput };
+        return copy;
+      }
+      return [...prev, { name: cleaned, level: skillLevelInput }];
+    });
+    setSkillNameInput('');
+  };
+
+  const updateSkillLevel = (name, level) => {
+    setSkills((prev) => prev.map((s) => (s.name === name ? { ...s, level } : s)));
+  };
+
+  const removeSkill = (name) => {
+    setSkills((prev) => prev.filter((s) => s.name !== name));
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (savingProfile) return;
+
+    // Validate https URLs client-side before sending
+    const urlChecks = [
+      { label: 'Portfolio URL', value: portfolioUrl },
+      { label: 'LeetCode URL', value: leetcodeUrl },
+      { label: 'CodingBat URL', value: codingbatUrl },
+      { label: 'LinkedIn URL', value: linkedinUrl },
+    ];
+    for (const check of urlChecks) {
+      if (check.value.trim() && !isValidHttpsUrl(check.value.trim())) {
+        setToast({ message: `${check.label} must start with https://`, type: 'error' });
+        return;
+      }
+    }
+    if (
+      githubInput.trim() &&
+      (githubInput.trim().includes('://') || githubInput.trim().toLowerCase().startsWith('http')) &&
+      !isValidHttpsUrl(githubInput.trim())
+    ) {
+      setToast({ message: 'GitHub URL must start with https://', type: 'error' });
+      return;
+    }
+
+    const nextRoles = [...targetRoles];
+    if (roleInput.trim() && !nextRoles.some((r) => r.toLowerCase() === roleInput.trim().toLowerCase())) {
+      nextRoles.push(roleInput.trim());
+    }
+    const nextSkills = [...skills];
+    if (skillNameInput.trim()) {
+      const idx = nextSkills.findIndex((s) => s.name.toLowerCase() === skillNameInput.trim().toLowerCase());
+      if (idx < 0) {
+        nextSkills.push({ name: skillNameInput.trim(), level: skillLevelInput });
+      }
+    }
+
+    setSavingProfile(true);
+    try {
+      const updated = await updateProfileSettings({
+        timeZone,
+        targetRoles: nextRoles,
+        skills: nextSkills,
+        githubInput: githubInput.trim(),
+        leetcodeUrl: leetcodeUrl.trim(),
+        codingbatUrl: codingbatUrl.trim(),
+        portfolioUrl: portfolioUrl.trim(),
+        linkedinUrl: linkedinUrl.trim(),
+      });
+
+      setTimeZone(updated.timeZone || 'Asia/Kolkata');
+      setTargetRoles(updated.targetRoles || []);
+      setRoleInput('');
+      setSkills(updated.skills || []);
+      setSkillNameInput('');
+      setGithubInput(updated.githubUrl || updated.githubUsername || '');
+      setLeetcodeUrl(updated.leetcodeUrl || '');
+      setCodingbatUrl(updated.codingbatUrl || '');
+      setPortfolioUrl(updated.portfolioUrl || '');
+      setLinkedinUrl(updated.linkedinUrl || '');
+      await refreshUser();
+      setToast({ message: 'Profile and links saved.', type: 'success' });
+    } catch (err) {
+      setToast({ message: err?.message || 'Unable to save profile settings.', type: 'error' });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   // Only requests browser permission after an explicit button click (never on page load).
   const handleEnableBrowserNotifications = async () => {
@@ -131,31 +293,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveLinks = async (e) => {
-    e.preventDefault();
-    if (savingLinks) return;
-    setSavingLinks(true);
-    try {
-      const updated = await updateProfileLinks({
-        githubUsername: githubUsername.trim(),
-        leetcodeUrl: leetcodeUrl.trim(),
-        codingbatUrl: codingbatUrl.trim(),
-        portfolioUrl: portfolioUrl.trim(),
-        linkedinUrl: linkedinUrl.trim(),
-      });
-      setGithubUsername(updated.githubUsername || '');
-      setLeetcodeUrl(updated.leetcodeUrl || '');
-      setCodingbatUrl(updated.codingbatUrl || '');
-      setPortfolioUrl(updated.portfolioUrl || '');
-      setLinkedinUrl(updated.linkedinUrl || '');
-      setToast({ message: 'Profile links saved.', type: 'success' });
-    } catch (err) {
-      setToast({ message: err?.message || 'Unable to save profile links.', type: 'error' });
-    } finally {
-      setSavingLinks(false);
-    }
-  };
-
   const permissionBadge = {
     granted: { text: 'Granted', classes: 'bg-completed-soft text-completed border-completed/25' },
     denied: { text: 'Denied', classes: 'bg-skipped-soft text-skipped border-skipped/25' },
@@ -167,119 +304,269 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <PageHeader title="Settings" breadcrumb="Account & Preferences" />
 
-      {/* Profile Summary */}
-      <Card>
-        <h2 className="text-base font-bold text-ink pb-3 border-b border-border/70">Profile</h2>
-        <dl className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-          <div>
-            <dt className="text-xs font-medium text-muted">Full Name</dt>
-            <dd className="mt-1 font-semibold text-ink">{user?.fullName || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-muted">Email</dt>
-            <dd className="mt-1 font-semibold text-ink">{user?.email || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-muted">Time Zone</dt>
-            <dd className="mt-1 font-semibold text-ink">{user?.timeZone || 'Asia/Kolkata'}</dd>
-          </div>
-        </dl>
-      </Card>
-
-      {/* External Profile Links */}
-      <Card>
-        <div className="pb-3 border-b border-border/70">
-          <h2 className="text-base font-bold text-ink">Developer Profile Links</h2>
-          <p className="text-xs text-muted mt-0.5">
-            Only GitHub public activity is synced via the official REST API. LeetCode, CodingBat,
-            LinkedIn, and Portfolio URLs are stored as reference links only (never scraped).
-          </p>
-        </div>
-
-        <form onSubmit={handleSaveLinks} className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="link-github" className="block text-xs font-semibold text-ink mb-1">
-                GitHub Username
-              </label>
-              <input
-                id="link-github"
-                type="text"
-                value={githubUsername}
-                onChange={(e) => setGithubUsername(e.target.value)}
-                placeholder="e.g. octocat"
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="link-leetcode" className="block text-xs font-semibold text-ink mb-1">
-                LeetCode Profile URL
-              </label>
-              <input
-                id="link-leetcode"
-                type="url"
-                value={leetcodeUrl}
-                onChange={(e) => setLeetcodeUrl(e.target.value)}
-                placeholder="https://leetcode.com/u/username"
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="link-codingbat" className="block text-xs font-semibold text-ink mb-1">
-                CodingBat Profile URL
-              </label>
-              <input
-                id="link-codingbat"
-                type="url"
-                value={codingbatUrl}
-                onChange={(e) => setCodingbatUrl(e.target.value)}
-                placeholder="https://codingbat.com/java"
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="link-linkedin" className="block text-xs font-semibold text-ink mb-1">
-                LinkedIn Profile URL
-              </label>
-              <input
-                id="link-linkedin"
-                type="url"
-                value={linkedinUrl}
-                onChange={(e) => setLinkedinUrl(e.target.value)}
-                placeholder="https://linkedin.com/in/username"
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label htmlFor="link-portfolio" className="block text-xs font-semibold text-ink mb-1">
-                Portfolio URL
-              </label>
-              <input
-                id="link-portfolio"
-                type="url"
-                value={portfolioUrl}
-                onChange={(e) => setPortfolioUrl(e.target.value)}
-                placeholder="https://your-portfolio.dev"
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
-              />
-            </div>
+      {/* Profile, Skills, Roles & Links */}
+      <form onSubmit={handleSaveProfile} className="space-y-6">
+        <Card>
+          <div className="pb-3 border-b border-border/70">
+            <h2 className="text-base font-bold text-ink">Profile</h2>
+            <p className="text-xs text-muted mt-0.5">
+              Configure your time zone, target career roles, and skills (used later for job-description matching).
+            </p>
           </div>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={savingLinks}
-              className="rounded-pill bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
-            >
-              {savingLinks ? 'Saving...' : 'Save Profile Links'}
-            </button>
+          <div className="mt-4 space-y-5">
+            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+              <div>
+                <dt className="text-xs font-medium text-muted">Full Name</dt>
+                <dd className="mt-1 font-semibold text-ink">{user?.fullName || '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-muted">Email</dt>
+                <dd className="mt-1 font-semibold text-ink">{user?.email || '—'}</dd>
+              </div>
+              <div>
+                <label htmlFor="profile-tz" className="block text-xs font-semibold text-ink mb-1">
+                  Time Zone
+                </label>
+                <select
+                  id="profile-tz"
+                  value={timeZone}
+                  onChange={(e) => setTimeZone(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                >
+                  {timeZoneOptions.map((tz) => (
+                    <option key={tz} value={tz}>
+                      {tz}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </dl>
+
+            {/* Target Roles */}
+            <div className="space-y-2">
+              <label htmlFor="target-role-input" className="block text-xs font-semibold text-ink">
+                Target Roles
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="target-role-input"
+                  type="text"
+                  value={roleInput}
+                  onChange={(e) => setRoleInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addRole();
+                    }
+                  }}
+                  placeholder="e.g. Junior Java Developer, Full Stack Engineer"
+                  className="flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                />
+                <button
+                  type="button"
+                  onClick={addRole}
+                  className="rounded-pill border border-border bg-canvas px-4 py-2 text-xs font-semibold text-ink hover:bg-primary-soft hover:text-primary"
+                >
+                  Add Role
+                </button>
+              </div>
+              {targetRoles.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {targetRoles.map((role) => (
+                    <span
+                      key={role}
+                      className="inline-flex items-center gap-1.5 rounded-pill border border-primary/25 bg-primary-soft px-3 py-1 text-xs font-semibold text-primary"
+                    >
+                      {role}
+                      <button
+                        type="button"
+                        onClick={() => removeRole(role)}
+                        aria-label={`Remove ${role}`}
+                        className="hover:text-ink"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Skills I Know */}
+            <div className="space-y-2">
+              <label htmlFor="skill-name-input" className="block text-xs font-semibold text-ink">
+                Skills I Know (Beginner / Working / Comfortable)
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  id="skill-name-input"
+                  type="text"
+                  value={skillNameInput}
+                  onChange={(e) => setSkillNameInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addSkill();
+                    }
+                  }}
+                  placeholder="e.g. Spring Boot, React, SQL"
+                  className="flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                />
+                <select
+                  aria-label="Skill level"
+                  value={skillLevelInput}
+                  onChange={(e) => setSkillLevelInput(e.target.value)}
+                  className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                >
+                  {SKILL_LEVELS.map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={addSkill}
+                  className="rounded-pill border border-border bg-canvas px-4 py-2 text-xs font-semibold text-ink hover:bg-primary-soft hover:text-primary"
+                >
+                  Add Skill
+                </button>
+              </div>
+
+              {skills.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {skills.map((skill) => (
+                    <span
+                      key={skill.name}
+                      className={`inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-xs font-semibold ${
+                        SKILL_LEVEL_BADGE[skill.level] || SKILL_LEVEL_BADGE.Working
+                      }`}
+                    >
+                      <span>{skill.name}</span>
+                      <select
+                        aria-label={`Level for ${skill.name}`}
+                        value={skill.level}
+                        onChange={(e) => updateSkillLevel(skill.name, e.target.value)}
+                        className="bg-transparent text-[11px] font-bold focus:outline-none cursor-pointer"
+                      >
+                        {SKILL_LEVELS.map((lvl) => (
+                          <option key={lvl} value={lvl} className="text-ink">
+                            {lvl}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => removeSkill(skill.name)}
+                        aria-label={`Remove ${skill.name}`}
+                        className="hover:opacity-75"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </form>
-      </Card>
+        </Card>
+
+        {/* External Profile Links */}
+        <Card>
+          <div className="pb-3 border-b border-border/70">
+            <h2 className="text-base font-bold text-ink">Developer Profile Links</h2>
+            <p className="text-xs text-muted mt-0.5">
+              All profile URLs must use <strong>https://</strong>. Only GitHub public activity is synced via the
+              official REST API; other links are stored as bookmarks only (never scraped).
+            </p>
+          </div>
+
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="link-portfolio" className="block text-xs font-semibold text-ink mb-1">
+                  Portfolio Website URL
+                </label>
+                <input
+                  id="link-portfolio"
+                  type="url"
+                  value={portfolioUrl}
+                  onChange={(e) => setPortfolioUrl(e.target.value)}
+                  placeholder="https://your-portfolio.dev"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="link-github" className="block text-xs font-semibold text-ink mb-1">
+                  GitHub Profile (username) or Repository URL
+                </label>
+                <input
+                  id="link-github"
+                  type="text"
+                  value={githubInput}
+                  onChange={(e) => setGithubInput(e.target.value)}
+                  placeholder="octocat or https://github.com/octocat/repo"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="link-leetcode" className="block text-xs font-semibold text-ink mb-1">
+                  Coding-Practice Profile URL (e.g. LeetCode)
+                </label>
+                <input
+                  id="link-leetcode"
+                  type="url"
+                  value={leetcodeUrl}
+                  onChange={(e) => setLeetcodeUrl(e.target.value)}
+                  placeholder="https://leetcode.com/u/username"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="link-linkedin" className="block text-xs font-semibold text-ink mb-1">
+                  LinkedIn Profile URL (Optional)
+                </label>
+                <input
+                  id="link-linkedin"
+                  type="url"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://linkedin.com/in/username"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label htmlFor="link-codingbat" className="block text-xs font-semibold text-ink mb-1">
+                  CodingBat Profile URL (Optional)
+                </label>
+                <input
+                  id="link-codingbat"
+                  type="url"
+                  value={codingbatUrl}
+                  onChange={(e) => setCodingbatUrl(e.target.value)}
+                  placeholder="https://codingbat.com/java"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={savingProfile}
+                className="rounded-pill bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+              >
+                {savingProfile ? 'Saving...' : 'Save Profile & Links'}
+              </button>
+            </div>
+          </div>
+        </Card>
+      </form>
 
       {/* Notifications Section */}
       <Card>
@@ -293,7 +580,6 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-4 space-y-5">
-          {/* Honest closed-tab limitation note */}
           <div className="rounded-xl border border-primary/20 bg-primary-soft p-4 text-xs sm:text-sm text-ink leading-relaxed">
             <p className="font-semibold">Honest reminder scope (Open-tab reminders)</p>
             <p className="mt-1 text-body">
@@ -304,7 +590,6 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          {/* Explicit click-only browser permission control */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/80 bg-canvas/60 p-4">
             <div>
               <p className="text-sm font-semibold text-ink">Browser Notifications</p>

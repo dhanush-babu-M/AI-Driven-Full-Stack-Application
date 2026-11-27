@@ -8,6 +8,7 @@ import com.pathpilot.coding.dto.CodingDtos.CodingStreakSummaryResponse;
 import com.pathpilot.coding.dto.CodingDtos.DayActivityDetailResponse;
 import com.pathpilot.coding.dto.CodingDtos.DayGithubEventDto;
 import com.pathpilot.coding.dto.CodingDtos.DayLearningRecordDto;
+import com.pathpilot.coding.dto.CodingDtos.DayProjectWorklogDto;
 import com.pathpilot.coding.dto.CodingDtos.HeatmapDayDto;
 import com.pathpilot.coding.dto.CodingDtos.HeatmapResponse;
 import com.pathpilot.coding.dto.CodingDtos.HeatmapTotalsDto;
@@ -23,6 +24,10 @@ import com.pathpilot.planner.RecordHistory;
 import com.pathpilot.planner.RecordHistoryRepository;
 import com.pathpilot.planner.dto.RecordHistoryDto;
 import com.pathpilot.progress.ProgressCalculator;
+import com.pathpilot.project.Project;
+import com.pathpilot.project.ProjectRepository;
+import com.pathpilot.project.ProjectWorklog;
+import com.pathpilot.project.ProjectWorklogRepository;
 import com.pathpilot.user.UserProfile;
 import com.pathpilot.user.UserProfileRepository;
 import org.springframework.http.HttpStatus;
@@ -56,6 +61,8 @@ public class CodingService {
     private final CodingActivityRepository codingActivityRepository;
     private final GithubEventRepository githubEventRepository;
     private final LearningRecordRepository learningRecordRepository;
+    private final ProjectWorklogRepository projectWorklogRepository;
+    private final ProjectRepository projectRepository;
     private final RecordHistoryRepository recordHistoryRepository;
     private final UserProfileRepository userProfileRepository;
 
@@ -63,12 +70,16 @@ public class CodingService {
             CodingActivityRepository codingActivityRepository,
             GithubEventRepository githubEventRepository,
             LearningRecordRepository learningRecordRepository,
+            ProjectWorklogRepository projectWorklogRepository,
+            ProjectRepository projectRepository,
             RecordHistoryRepository recordHistoryRepository,
             UserProfileRepository userProfileRepository
     ) {
         this.codingActivityRepository = codingActivityRepository;
         this.githubEventRepository = githubEventRepository;
         this.learningRecordRepository = learningRecordRepository;
+        this.projectWorklogRepository = projectWorklogRepository;
+        this.projectRepository = projectRepository;
         this.recordHistoryRepository = recordHistoryRepository;
         this.userProfileRepository = userProfileRepository;
     }
@@ -364,7 +375,25 @@ public class CodingService {
                 ))
                 .toList();
 
-        return new DayActivityDetailResponse(date, githubDtos, codingDtos, learningDtos);
+        List<ProjectWorklog> worklogs = projectWorklogRepository
+                .findAllByUserIdAndWorkDateAndDeletedAtUtcIsNullOrderByCreatedAtUtcDescIdDesc(userId, date);
+        Map<Long, String> projectTitles = projectRepository
+                .findAllByUserIdAndDeletedAtUtcIsNullOrderByUpdatedAtUtcDescIdDesc(userId)
+                .stream()
+                .collect(Collectors.toMap(Project::getId, Project::getTitle, (a, b) -> a));
+
+        List<DayProjectWorklogDto> worklogDtos = worklogs.stream()
+                .map(w -> new DayProjectWorklogDto(
+                        w.getId(),
+                        w.getProjectId(),
+                        projectTitles.getOrDefault(w.getProjectId(), "Project #" + w.getProjectId()),
+                        w.getMinutesSpent(),
+                        w.getSummary(),
+                        w.getDataSource()
+                ))
+                .toList();
+
+        return new DayActivityDetailResponse(date, githubDtos, codingDtos, learningDtos, worklogDtos);
     }
 
     @Transactional(readOnly = true)

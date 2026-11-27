@@ -57,6 +57,12 @@ public class UserProfile {
     @Column(name = "codingbat_url", length = 500)
     private String codingbatUrl;
 
+    @Column(name = "skills_json", columnDefinition = "TEXT")
+    private String skillsJson;
+
+    @Column(name = "target_roles_json", columnDefinition = "TEXT")
+    private String targetRolesJson;
+
     @Column(name = "created_at_utc", nullable = false, updatable = false)
     private Instant createdAtUtc;
 
@@ -179,6 +185,22 @@ public class UserProfile {
 
     public void setCodingbatUrl(String codingbatUrl) {
         this.codingbatUrl = codingbatUrl;
+    }
+
+    public String getSkillsJson() {
+        return skillsJson;
+    }
+
+    public void setSkillsJson(String skillsJson) {
+        this.skillsJson = skillsJson;
+    }
+
+    public String getTargetRolesJson() {
+        return targetRolesJson;
+    }
+
+    public void setTargetRolesJson(String targetRolesJson) {
+        this.targetRolesJson = targetRolesJson;
     }
 
     public Instant getCreatedAtUtc() {

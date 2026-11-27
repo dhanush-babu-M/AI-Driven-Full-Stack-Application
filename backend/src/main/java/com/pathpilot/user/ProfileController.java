@@ -2,7 +2,9 @@ package com.pathpilot.user;
 
 import com.pathpilot.security.CurrentUser;
 import com.pathpilot.user.dto.ProfileDtos.ProfileLinksResponse;
+import com.pathpilot.user.dto.ProfileDtos.ProfileSettingsResponse;
 import com.pathpilot.user.dto.ProfileDtos.UpdateProfileLinksRequest;
+import com.pathpilot.user.dto.ProfileDtos.UpdateProfileSettingsRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -18,6 +20,16 @@ public class ProfileController {
 
     public ProfileController(ProfileService profileService) {
         this.profileService = profileService;
+    }
+
+    @GetMapping
+    public ProfileSettingsResponse getProfile() {
+        return profileService.getProfileSettings(CurrentUser.id());
+    }
+
+    @PutMapping
+    public ProfileSettingsResponse updateProfile(@Valid @RequestBody UpdateProfileSettingsRequest request) {
+        return profileService.updateProfileSettings(CurrentUser.id(), request);
     }
 
     @GetMapping("/links")

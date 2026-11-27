@@ -31,6 +31,7 @@ export default function DayActivityDrawer({
   const githubEvents = detail?.githubEvents || [];
   const codingActivities = detail?.codingActivities || [];
   const learningRecords = detail?.learningRecords || [];
+  const projectWorklogs = detail?.projectWorklogs || [];
 
   return (
     <div
@@ -187,6 +188,36 @@ export default function DayActivityDrawer({
                         {lr.notes && (
                           <p className="text-xs text-body whitespace-pre-wrap">{lr.notes}</p>
                         )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              {/* Project Work Logs */}
+              <section className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
+                    Project Work Logs ({projectWorklogs.length})
+                  </h3>
+                  <SourceTag source="MANUAL" />
+                </div>
+                {projectWorklogs.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-border px-3.5 py-3 text-xs text-muted">
+                    No project work logs recorded for this date.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {projectWorklogs.map((wl) => (
+                      <li
+                        key={wl.id}
+                        className="rounded-xl border border-border bg-canvas/60 p-3 space-y-1"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-ink">{wl.projectTitle}</span>
+                          <span className="text-xs text-muted">{wl.minutesSpent} min</span>
+                        </div>
+                        <p className="text-xs text-body whitespace-pre-wrap">{wl.summary}</p>
                       </li>
                     ))}
                   </ul>

@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import MonthlyPlannerPage from './pages/MonthlyPlannerPage';
 import PlaceholderPage from './pages/PlaceholderPage';
+import ProjectsPage from './pages/ProjectsPage';
 import SettingsPage from './pages/SettingsPage';
 import WeeklyPlannerPage from './pages/WeeklyPlannerPage';
 import WelcomePage from './pages/WelcomePage';
@@ -51,16 +52,8 @@ export default function App() {
           <Route path="planner/monthly" element={<MonthlyPlannerPage />} />
 
           <Route path="coding" element={<CodingActivityPage />} />
-          <Route
-            path="projects"
-            element={
-              <PlaceholderPage
-                title="Projects and Applications"
-                breadcrumb="Portfolio & Jobs"
-                description="Phase 6 will implement the Projects | Job Applications tabs here."
-              />
-            }
-          />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/:projectId" element={<ProjectsPage />} />
           <Route
             path="reports/:yearMonth"
             element={<PlaceholderPage title="Monthly Report" breadcrumb="Reports" />}

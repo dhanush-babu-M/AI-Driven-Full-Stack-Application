@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -49,6 +50,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiErrorResponse> handleApiException(ApiException ex) {
         return build(ex.getStatus(), ex.getCode(), ex.getMessage(), ex.getFieldErrors());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleMaxUpload(MaxUploadSizeExceededException ex) {
+        return build(
+                HttpStatus.BAD_REQUEST,
+                "FILE_TOO_LARGE",
+                "Uploaded file exceeds the 2 MB limit.",
+                Map.of("file", "Screenshot must be 2 MB or smaller.")
+        );
     }
 
     @ExceptionHandler(ResponseStatusException.class)

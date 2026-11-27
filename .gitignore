@@ -24,6 +24,10 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Local file uploads outside web root
+uploads/
+**/uploads/
+
 # IDE files
 .idea/
 *.iml

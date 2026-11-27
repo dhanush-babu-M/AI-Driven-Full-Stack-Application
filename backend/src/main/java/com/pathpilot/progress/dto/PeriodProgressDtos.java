@@ -56,6 +56,17 @@ public final class PeriodProgressDtos {
     ) {
     }
 
+    public record MonthWorklogDto(
+            Long id,
+            Long projectId,
+            String projectTitle,
+            LocalDate workDate,
+            int minutesSpent,
+            String summary,
+            String dataSource
+    ) {
+    }
+
     public record MonthlyProgressResponse(
             String month,
             LocalDate monthStart,
@@ -71,7 +82,8 @@ public final class PeriodProgressDtos {
             CategoryRatesDto categoryRates,
             CategoryChangeDto categoryChanges,
             List<MonthDaySummaryDto> daySummaries,
-            List<MonthMilestoneDto> milestones
+            List<MonthMilestoneDto> milestones,
+            List<MonthWorklogDto> projectWorklogs
     ) {
     }
 }

@@ -16,9 +16,11 @@ import com.pathpilot.planner.Task;
 import com.pathpilot.planner.TaskRepository;
 import com.pathpilot.planner.WeeklyReviewRepository;
 import com.pathpilot.project.Project;
+import com.pathpilot.project.ProjectMediaRepository;
 import com.pathpilot.project.ProjectMilestone;
 import com.pathpilot.project.ProjectMilestoneRepository;
 import com.pathpilot.project.ProjectRepository;
+import com.pathpilot.project.ProjectWorklogRepository;
 import com.pathpilot.security.AuthRateLimitFilter;
 import com.pathpilot.user.User;
 import com.pathpilot.user.UserProfile;
@@ -116,6 +118,12 @@ class DemoDashboardIntegrationTest {
     private ProjectMilestoneRepository projectMilestoneRepository;
 
     @MockitoBean
+    private ProjectWorklogRepository projectWorklogRepository;
+
+    @MockitoBean
+    private ProjectMediaRepository projectMediaRepository;
+
+    @MockitoBean
     private JobApplicationRepository jobApplicationRepository;
 
     private MockMvc mockMvc;
@@ -204,6 +212,8 @@ class DemoDashboardIntegrationTest {
         });
         when(projectRepository.findFirstByUserIdOrderByUpdatedAtUtcDescIdDesc(anyLong()))
                 .thenAnswer(inv -> projects.stream().findFirst());
+        when(projectRepository.findAllByUserIdAndDeletedAtUtcIsNullOrderByUpdatedAtUtcDescIdDesc(anyLong()))
+                .thenAnswer(inv -> projects);
 
         when(projectMilestoneRepository.save(any(ProjectMilestone.class))).thenAnswer(inv -> {
             ProjectMilestone m = inv.getArgument(0);
@@ -211,6 +221,8 @@ class DemoDashboardIntegrationTest {
             return m;
         });
         when(projectMilestoneRepository.findAllByUserIdAndProjectIdOrderBySortOrderAscIdAsc(anyLong(), anyLong()))
+                .thenAnswer(inv -> milestones);
+        when(projectMilestoneRepository.findAllByUserIdAndProjectIdAndDeletedAtUtcIsNullOrderBySortOrderAscIdAsc(anyLong(), anyLong()))
                 .thenAnswer(inv -> milestones);
 
         when(jobApplicationRepository.save(any(JobApplication.class))).thenAnswer(inv -> {

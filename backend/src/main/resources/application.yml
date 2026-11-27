@@ -17,12 +17,19 @@ app:
     connect-timeout-ms: ${GITHUB_CONNECT_TIMEOUT_MS:5000}
     read-timeout-ms: ${GITHUB_READ_TIMEOUT_MS:10000}
     token-encryption-key: ${GITHUB_TOKEN_ENCRYPTION_KEY:}
+  uploads:
+    dir: ${UPLOADS_DIR:./uploads}
+    max-file-size-bytes: ${UPLOADS_MAX_BYTES:2097152}
 
 spring:
   application:
     name: ${app.name}
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
   jpa:
     open-in-view: false
     hibernate:

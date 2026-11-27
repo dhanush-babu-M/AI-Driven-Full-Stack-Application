@@ -156,16 +156,21 @@ public class DemoDataSeeder implements CommandLineRunner {
         Project project = new Project();
         project.setUserId(userId);
         project.setTitle("Career Tracker API (DEMO)");
-        project.setStatus("IN_PROGRESS");
+        project.setIcon("rocket");
+        project.setDescription("Sample Spring Boot + React portfolio project showing milestone progress and work logs.");
+        project.setTechStack("Java 17, Spring Boot, MySQL, React, Tailwind CSS");
+        project.setRepoUrl("https://github.com/demo-pathpilot/career-tracker");
+        project.setLiveUrl("https://demo.pathpilot.local");
+        project.setStatus("CURRENT");
         project.setStartDate(today.minusDays(20));
         project.setTargetDate(today.plusDays(15));
         project.setDataSource("DEMO");
         Project savedProject = projectRepository.save(project);
 
-        seedMilestone(userId, savedProject.getId(), "Schema & Flyway setup", "COMPLETED", 1);
-        seedMilestone(userId, savedProject.getId(), "BCrypt + JWT auth", "COMPLETED", 2);
-        seedMilestone(userId, savedProject.getId(), "ProgressCalculator engine", "COMPLETED", 3);
-        seedMilestone(userId, savedProject.getId(), "Deployment checklist", "PENDING", 4);
+        seedMilestone(userId, savedProject.getId(), "Schema & Flyway setup", "COMPLETED", today.minusDays(15), 1);
+        seedMilestone(userId, savedProject.getId(), "BCrypt + JWT auth", "COMPLETED", today.minusDays(10), 2);
+        seedMilestone(userId, savedProject.getId(), "ProgressCalculator engine", "COMPLETED", today.minusDays(4), 3);
+        seedMilestone(userId, savedProject.getId(), "Deployment checklist", "PLANNED", null, 4);
 
         // 3 recent fictional applications
         seedApplication(userId, "Northstar Labs (DEMO)", "Junior Java Developer", "INTERVIEW", today.minusDays(2), "Bengaluru");
@@ -196,12 +201,20 @@ public class DemoDataSeeder implements CommandLineRunner {
         taskRepository.save(task);
     }
 
-    private void seedMilestone(Long userId, Long projectId, String title, String status, int sortOrder) {
+    private void seedMilestone(
+            Long userId,
+            Long projectId,
+            String title,
+            String status,
+            LocalDate completedDate,
+            int sortOrder
+    ) {
         ProjectMilestone milestone = new ProjectMilestone();
         milestone.setUserId(userId);
         milestone.setProjectId(projectId);
         milestone.setTitle(title);
         milestone.setStatus(status);
+        milestone.setCompletedDate(completedDate);
         milestone.setSortOrder(sortOrder);
         milestone.setDataSource("DEMO");
         projectMilestoneRepository.save(milestone);

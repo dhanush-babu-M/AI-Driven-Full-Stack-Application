@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.List;
 
 /**
- * Single configuration source for application identity, CORS, JWT, and rate-limit settings.
+ * Single configuration source for application identity, CORS, JWT, rate-limit, GitHub, and upload settings.
  */
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(
@@ -14,13 +14,18 @@ public record AppProperties(
         CorsProperties cors,
         JwtProperties jwt,
         RateLimitProperties rateLimit,
-        GithubProperties github
+        GithubProperties github,
+        UploadsProperties uploads
 ) {
     public AppProperties {
         if (github == null) {
             github = new GithubProperties(null, 5000, 10000, null);
         }
+        if (uploads == null) {
+            uploads = new UploadsProperties("./uploads", 2L * 1024 * 1024);
+        }
     }
+
     public record CorsProperties(List<String> allowedOrigins) {
         public CorsProperties {
             if (allowedOrigins == null || allowedOrigins.isEmpty()) {
@@ -78,6 +83,20 @@ public record AppProperties(
             }
             if (readTimeoutMs <= 0) {
                 readTimeoutMs = 10000;
+            }
+        }
+    }
+
+    public record UploadsProperties(
+            String dir,
+            long maxFileSizeBytes
+    ) {
+        public UploadsProperties {
+            if (dir == null || dir.isBlank()) {
+                dir = "./uploads";
+            }
+            if (maxFileSizeBytes <= 0) {
+                maxFileSizeBytes = 2L * 1024 * 1024;
             }
         }
     }

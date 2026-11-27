@@ -4,12 +4,30 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjectMilestoneRepository extends JpaRepository<ProjectMilestone, Long> {
 
     List<ProjectMilestone> findAllByUserIdAndProjectIdOrderBySortOrderAscIdAsc(Long userId, Long projectId);
 
+    List<ProjectMilestone> findAllByUserIdAndProjectIdAndDeletedAtUtcIsNullOrderBySortOrderAscIdAsc(
+            Long userId,
+            Long projectId
+    );
+
+    Optional<ProjectMilestone> findByIdAndUserIdAndProjectIdAndDeletedAtUtcIsNull(
+            Long id,
+            Long userId,
+            Long projectId
+    );
+
     List<ProjectMilestone> findAllByUserIdAndDueDateBetweenOrderByDueDateAscIdAsc(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
+
+    List<ProjectMilestone> findAllByUserIdAndDeletedAtUtcIsNullAndDueDateBetweenOrderByDueDateAscIdAsc(
             Long userId,
             LocalDate startDate,
             LocalDate endDate

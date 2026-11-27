@@ -4,6 +4,7 @@ import { fetchDashboard } from '../api/client';
 import Card from '../components/Card';
 import CategoryChip from '../components/CategoryChip';
 import EmptyState from '../components/EmptyState';
+import ProfileQuickLinkPills from '../components/ProfileQuickLinkPills';
 import ProgressBar from '../components/ProgressBar';
 import SourceTag from '../components/SourceTag';
 import StatTile from '../components/StatTile';
@@ -249,13 +250,6 @@ export default function DashboardPage() {
   const recentApplications = dashboard?.recentApplications || [];
   const links = dashboard?.links || {};
   const sourceBadge = dashboard?.demo ? 'DEMO' : 'CALCULATED';
-
-  const quickLinkItems = [
-    { label: 'Portfolio', url: links.portfolioUrl },
-    { label: 'GitHub', url: links.githubUrl },
-    { label: 'LinkedIn', url: links.linkedinUrl },
-    { label: 'Coding Profile', url: links.codingProfileUrl },
-  ];
 
   return (
     <div className="space-y-6">
@@ -690,10 +684,10 @@ export default function DashboardPage() {
 
             <div className="pt-2 border-t border-border/70">
               <Link
-                to="/app/projects"
+                to={currentProject ? `/app/projects/${currentProject.id}` : '/app/projects'}
                 className="text-xs font-semibold text-primary hover:underline"
               >
-                View Projects →
+                {currentProject ? 'Open Project →' : 'View Projects →'}
               </Link>
             </div>
           </Card>
@@ -803,33 +797,34 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <ul className="mt-4 space-y-2.5 flex-1">
-              {quickLinkItems.map((item) => (
-                <li
-                  key={item.label}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3.5 py-2.5"
-                >
-                  <span className="text-sm font-medium text-ink">{item.label}</span>
-                  {item.url ? (
+            <div className="mt-4 flex-1 space-y-3">
+              <ProfileQuickLinkPills links={links} layout="grid" />
+
+              {(links.linkedinUrl || links.codingbatUrl) && (
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60 text-xs">
+                  {links.linkedinUrl && (
                     <a
-                      href={item.url}
+                      href={links.linkedinUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs font-semibold text-primary hover:underline truncate max-w-[160px]"
+                      className="rounded-pill border border-border bg-canvas px-3 py-1 font-medium text-ink hover:bg-primary-soft hover:text-primary"
                     >
-                      Open link ↗
+                      LinkedIn ↗
                     </a>
-                  ) : (
-                    <Link
-                      to="/app/settings"
-                      className="rounded-pill bg-canvas px-3 py-1 text-xs font-semibold text-primary border border-border hover:bg-primary-soft transition-colors duration-fast"
-                    >
-                      Add link
-                    </Link>
                   )}
-                </li>
-              ))}
-            </ul>
+                  {links.codingbatUrl && (
+                    <a
+                      href={links.codingbatUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-pill border border-border bg-canvas px-3 py-1 font-medium text-ink hover:bg-primary-soft hover:text-primary"
+                    >
+                      CodingBat ↗
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </Card>
         </div>
       )}
